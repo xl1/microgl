@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script type="x-shader/x-vertex" id="vshader">
+attribute vec2 a_position;
+uniform mat4 u_perspective;
+uniform mat4 u_modelView;
+varying vec2 v_texCoord;
+
+void main(){
+  v_texCoord = a_position;
+  gl_Position = u_perspective * u_modelView * vec4(a_position, 0.0, 1.0);
+}
+</script>
+<script type="x-shader/x-fragment" id="fshader">
+precision mediump float;
+
+uniform sampler2D u_sampler;
+varying vec2 v_texCoord;
+
+void main(){
+  gl_FragColor = texture2D(u_sampler, v_texCoord);
+}
+</script>
+<script src="../microgl.js"></script>
+<script>
+var gl = new MicroGL(), t = 0;
+
+function $text(id){
+  return document.getElementById(id).textContent;
+}
+
+function main(){
+  // append <canvas> element to <body>
+  gl.init(document.body, 256, 256);
+  // compile shaders and link program
+  gl.program($text('vshader'), $text('fshader'));
+  // bind variables
+  gl.bindVars({
+    a_position: [0,0, 0,1, 1,0, 1,1],
+    // images will be loaded asynchronously
+    // use `gl.texture(img, tex, callback)` to listen img.onload
+    u_sampler: '../test/test.jpg',
+    // matrix is transposed in shaders
+    u_perspective: [
+      2, 0, 0, 0,
+      0, 2, 0, 0,
+      0, 0, 1005/995, 1,
+      0, 0, -1000/995, 0
+    ]
+  });
+  update();
+}
+
+function update(){
+  t += 0.05;
+  // update model-view matrix
+  gl.bindVars({
+    u_modelView: [
+      Math.cos(t), 0, -Math.sin(t), 0,
+      0,           1,            0, 0,
+      Math.sin(t), 0,  Math.cos(t), 0,
+      0, -0.5, 3, 1
+    ]
+  });
+  // then draw!
+  gl.clear().draw();
+  
+  requestAnimationFrame(update);
+}
+
+document.addEventListener('DOMContentLoaded', main, false);
+</script>

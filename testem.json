@@ -1,0 +1,12 @@
+{
+  "before_tests": "coffee -c microgl.coffee test/microglSpec.coffee",
+  "after_tests": "rm test/microglSpec.js",
+  "src_files": [
+    "microgl.coffee",
+    "test/microglSpec.coffee"
+  ],
+  "serve_files": [
+    "microgl.js",
+    "test/microglSpec.js"
+  ]
+}
