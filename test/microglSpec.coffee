@@ -144,12 +144,13 @@ describe 'MicroGL', ->
       a_texCoord: [0,0, 0,1, 1,1]
       u_sampler: 'test/test.jpg'
     }
+    gl.clear()
     gl.draw()
     imagedata = gl.read()
 
     it 'should return an array-like, its length is "width x height x 4"', ->
       expect(imagedata.length).toBe 64 * 32 * 4
 
-    #it 'should return image-data properly (check alpha == 255)', ->
-    #  for d in imagedata by 4
-    #    expect(d).toBe 255
+    it 'should return image-data properly (check alpha == 255)', ->
+      for d in [3...imagedata.length] by 4 
+        expect(imagedata[d]).toBe 255
