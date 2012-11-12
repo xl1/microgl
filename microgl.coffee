@@ -130,12 +130,15 @@ class MicroGL
     tex
 
 
-  variable: (param) ->
+  variable: (param, cacheTexture) ->
     obj = {}
     for own name, value of param
       if uniform = @uniforms[name]
         if ~TYPESUFFIX[uniform.type].indexOf('Sampler')
-          value = @textures[name] = @texture(value, @textures[name])
+          if cacheTexture
+            value = @textures[name] = @texture(value, @textures[name])
+          else
+            value = @texture(value)
         obj[name] = value
       else
         buffer = @gl.createBuffer()
@@ -189,7 +192,7 @@ class MicroGL
     
     
   bindVars: (param) ->
-    @bind(@variable(param))
+    @bind @variable(param, true)
     
     
   frame: (width=@gl.canvas.width, height=@gl.canvas.height, option) ->

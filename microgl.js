@@ -181,7 +181,7 @@
       return tex;
     };
 
-    MicroGL.prototype.variable = function(param) {
+    MicroGL.prototype.variable = function(param, cacheTexture) {
       var attribute, buffer, name, obj, uniform, value;
       obj = {};
       for (name in param) {
@@ -189,7 +189,11 @@
         value = param[name];
         if (uniform = this.uniforms[name]) {
           if (~TYPESUFFIX[uniform.type].indexOf('Sampler')) {
-            value = this.textures[name] = this.texture(value, this.textures[name]);
+            if (cacheTexture) {
+              value = this.textures[name] = this.texture(value, this.textures[name]);
+            } else {
+              value = this.texture(value);
+            }
           }
           obj[name] = value;
         } else {
@@ -259,7 +263,7 @@
     };
 
     MicroGL.prototype.bindVars = function(param) {
-      return this.bind(this.variable(param));
+      return this.bind(this.variable(param, true));
     };
 
     MicroGL.prototype.frame = function(width, height, option) {

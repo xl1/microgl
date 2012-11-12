@@ -85,12 +85,21 @@ describe 'MicroGL', ->
       }
       expect(vari).toBeDefined()
 
-    it 'should cache texture', ->
+    it 'should not cache texture', ->
       gl.variable { u_sampler: 'test/test.jpg' }
       spyOn(gl.gl, 'createTexture').andCallThrough()
       gl.variable { u_sampler: 'test/test.jpg' }
-      expect(gl.gl.createTexture).not.toHaveBeenCalled()
+      expect(gl.gl.createTexture).toHaveBeenCalled()
 
+  describe '#bindVars()', ->
+    gl.program vshader, fshader
+    
+    it 'should cache texture', ->
+      gl.bindVars { u_sampler: 'test/test.jpg' }
+      spyOn(gl.gl, 'createTexture').andCallThrough()
+      gl.bindVars { u_sampler: 'test/test.jpg' }
+      expect(gl.gl.createTexture).not.toHaveBeenCalled()
+      
   describe '#frame()', ->
     it 'should return a framebuffer', ->
       frame = gl.frame()
