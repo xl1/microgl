@@ -28,10 +28,9 @@ TYPESIZE[glproto.FLOAT_MAT4] = 16
 class MicroGL
   constructor: (opt) ->
     c = document.createElement('canvas')
-    @enabled = false
     @gl = c.getContext('webgl', opt) or c.getContext('experimental-webgl', opt)
+    @enabled = !!@gl
     return if not @gl
-    @enabled = true
     @uniforms = {}
     @attributes = {}
     @textures = {}
@@ -75,6 +74,8 @@ class MicroGL
     @uniforms = {}
     @attributes = {}
     @textures = {}
+    @_useElementArray = false
+    @_texnum = 0
     
     @gl.useProgram(program)
     for i in [0...@gl.getProgramParameter(program, @gl.ACTIVE_UNIFORMS)]
@@ -132,23 +133,25 @@ class MicroGL
 
   variable: (param, cacheTexture) ->
     obj = {}
-    for own name, value of param
-      if uniform = @uniforms[name]
+    for name in Object.keys param
+      value = param[name]
+      if not value?
+        obj[name] = null
+      else if uniform = @uniforms[name]
         if ~TYPESUFFIX[uniform.type].indexOf('Sampler')
           if cacheTexture
             value = @textures[name] = @texture(value, @textures[name])
           else
             value = @texture(value)
         obj[name] = value
-      else
+      else 
         buffer = @gl.createBuffer()
         if attribute = @attributes[name]
           @gl.bindBuffer(@gl.ARRAY_BUFFER, buffer)
           @gl.bufferData(@gl.ARRAY_BUFFER, new Float32Array(value), @gl.STATIC_DRAW)
-        else if name is 'INDEX'
+        else
           @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, buffer)
           @gl.bufferData(@gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(value), @gl.STATIC_DRAW)
-        else continue
         buffer.length = value.length
         obj[name] = buffer
     obj
@@ -171,23 +174,24 @@ class MicroGL
     size = TYPESIZE[attribute.type]
     @gl.bindBuffer(@gl.ARRAY_BUFFER, value)
     @gl.vertexAttribPointer(attribute.location, size, @gl.FLOAT, false, 0, 0)
-    if not @_useElementArray
-      @_numElements = value.length / size
+    @_numArrays = value.length / size
 
   bind: (obj) ->
     @_drawArg = undefined
-    @_useElementArray = false
-    @_texnum = 0
+      
     @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, null)
-    for own name, value of obj
+    for name in Object.keys obj
+      value = obj[name]
       if uniform = @uniforms[name]
         @_bindUniform(uniform, value)
       else if attribute = @attributes[name]
         @_bindAttribute(attribute, value)
-      else
+      else if value
         @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, value)
         @_numElements = value.length
         @_useElementArray = true
+      else
+        @_useElementArray = false
     @
     
     
@@ -218,12 +222,15 @@ class MicroGL
     fb
 
 
-  draw: (type, num=@_numElements) ->
+  draw: (type, num) ->
     if @_useElementArray
+      num ?= @_numElements
       @gl.drawElements(@gl[type or 'TRIANGLES'], num, @gl.UNSIGNED_SHORT, 0)
     else
+      num ?= @_numArrays
       @gl.drawArrays(@gl[type or 'TRIANGLE_STRIP'], 0, num)
     @_drawArg = [type, num]
+    @_texnum = 0
     @
     
   drawFrame: (fb, type, num) ->

@@ -136,14 +136,30 @@ describe 'MicroGL', ->
 
     it 'should call #gl.drawElements() if INDEX is given', ->
       gl.bindVars {
+        INDEX: [0, 1, 2]
+      }
+      gl.bindVars {
         a_position: [0,0,1,1, 0,1,1,1, 1,1,1,1]
         a_texCoord: [0,0, 0,1, 1,1]
         u_sampler: 'test/test.jpg'
-        INDEX: [0, 1, 2]
       }
       spyOn(gl.gl, 'drawElements').andCallThrough()
       gl.draw()
       expect(gl.gl.drawElements.mostRecentCall.args[0..1]).toEqual [gl.gl.TRIANGLES, 3]
+      
+    it 'should call #gl.drawArrays() after INDEX is deleted', ->
+      gl.bindVars {
+        INDEX: [0, 1, 2]
+        a_position: [0,0,1,1, 0,1,1,1, 1,1,1,1]
+        a_texCoord: [0,0, 0,1, 1,1]
+        u_sampler: 'test/test.jpg'
+      }
+      gl.bindVars {
+        INDEX: null
+      }
+      spyOn(gl.gl, 'drawArrays').andCallThrough()
+      gl.draw()
+      expect(gl.gl.drawArrays).toHaveBeenCalledWith(gl.gl.TRIANGLE_STRIP, 0, 3)
 
   describe '#read()', ->
     gl.init(document.body, 64, 32)
