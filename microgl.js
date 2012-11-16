@@ -115,7 +115,6 @@
       program = fsSource ? this.makeProgram(vsSource, fsSource) : vsSource;
       this.uniforms = {};
       this.attributes = {};
-      this.textures = {};
       this._useElementArray = false;
       this._texnum = 0;
       this.gl.useProgram(program);

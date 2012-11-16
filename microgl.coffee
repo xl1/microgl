@@ -46,8 +46,8 @@ class MicroGL
     @gl.enable(@gl.DEPTH_TEST)
     @gl.depthFunc(@gl.LEQUAL)
     @
-    
-    
+
+
   makeProgram: (vsSource, fsSource) ->
     initShader = (type, source) =>
       shader = @gl.createShader(type)
@@ -73,10 +73,9 @@ class MicroGL
     program = if fsSource then @makeProgram(vsSource, fsSource) else vsSource
     @uniforms = {}
     @attributes = {}
-    @textures = {}
     @_useElementArray = false
     @_texnum = 0
-    
+
     @gl.useProgram(program)
     for i in [0...@gl.getProgramParameter(program, @gl.ACTIVE_UNIFORMS)]
       uniform = @gl.getActiveUniform(program, i)
@@ -121,12 +120,12 @@ class MicroGL
           callback(tex)
         else if @_drawArg
           @gl.bindTexture(@gl.TEXTURE_2D, tex)
-          @draw(@_drawArg...) 
+          @draw(@_drawArg...)
       img.src = source
     else if source instanceof WebGLTexture
       tex = source
     else
-      # <img>, <video>, <canvas>, ImageData object, etc. 
+      # <img>, <video>, <canvas>, ImageData object, etc.
       @_setTexture(source, tex)
     tex
 
@@ -144,7 +143,7 @@ class MicroGL
           else
             value = @texture(value)
         obj[name] = value
-      else 
+      else
         buffer = @gl.createBuffer()
         if attribute = @attributes[name]
           @gl.bindBuffer(@gl.ARRAY_BUFFER, buffer)
@@ -155,7 +154,7 @@ class MicroGL
         buffer.length = value.length
         obj[name] = buffer
     obj
-    
+
 
   _bindUniform: (uniform, value) ->
     suffix = TYPESUFFIX[uniform.type]
@@ -178,7 +177,7 @@ class MicroGL
 
   bind: (obj) ->
     @_drawArg = undefined
-      
+
     @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, null)
     for name in Object.keys obj
       value = obj[name]
@@ -193,31 +192,31 @@ class MicroGL
       else
         @_useElementArray = false
     @
-    
-    
+
+
   bindVars: (param) ->
     @bind @variable(param, true)
-    
-    
+
+
   frame: (width=@gl.canvas.width, height=@gl.canvas.height, option) ->
     # option = color:true, depth:true, stencil:true
     fb = @gl.createFramebuffer()
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, fb)
     tex = @gl.createTexture()
     @_setTexture({ width, height }, tex, true)
-    
+
     rb = @gl.createRenderbuffer()
     @gl.bindRenderbuffer(@gl.RENDERBUFFER, rb)
     @gl.renderbufferStorage(@gl.RENDERBUFFER, @gl.DEPTH_COMPONENT16, width, height)
-    
+
     @gl.framebufferTexture2D(@gl.FRAMEBUFFER, @gl.COLOR_ATTACHMENT0,
       @gl.TEXTURE_2D, tex, 0)
     @gl.framebufferRenderbuffer(@gl.FRAMEBUFFER, @gl.DEPTH_ATTACHMENT,
       @gl.RENDERBUFFER, rb)
-    
+
     @gl.bindRenderbuffer(@gl.RENDERBUFFER, null)
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, null)
-    
+
     fb.color = tex
     fb
 
@@ -232,25 +231,25 @@ class MicroGL
     @_drawArg = [type, num]
     @_texnum = 0
     @
-    
+
   drawFrame: (fb, type, num) ->
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, fb)
     @draw(type, num)
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, null)
     @
-      
-      
+
+
   clear: ->
     @gl.clear(@gl.COLOR_BUFFER_BIT | @gl.DEPTH_BUFFER_BIT)
     @
-    
+
   clearFrame: (fb) ->
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, fb)
     @clear()
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, null)
     @
-    
-  
+
+
   read: ->
     canv = @gl.canvas
     width = canv.width
@@ -258,7 +257,7 @@ class MicroGL
     array = new Uint8Array(width * height * 4)
     @gl.readPixels(0, 0, width, height, @gl.RGBA, @gl.UNSIGNED_BYTE, array)
     array
-    
+
 
 if window
   window.MicroGL = MicroGL

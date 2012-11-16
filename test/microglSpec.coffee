@@ -93,13 +93,13 @@ describe 'MicroGL', ->
 
   describe '#bindVars()', ->
     gl.program vshader, fshader
-    
+
     it 'should cache texture', ->
       gl.bindVars { u_sampler: 'test/test.jpg' }
       spyOn(gl.gl, 'createTexture').andCallThrough()
       gl.bindVars { u_sampler: 'test/test.jpg' }
       expect(gl.gl.createTexture).not.toHaveBeenCalled()
-      
+
   describe '#frame()', ->
     it 'should return a framebuffer', ->
       frame = gl.frame()
@@ -146,7 +146,7 @@ describe 'MicroGL', ->
       spyOn(gl.gl, 'drawElements').andCallThrough()
       gl.draw()
       expect(gl.gl.drawElements.mostRecentCall.args[0..1]).toEqual [gl.gl.TRIANGLES, 3]
-      
+
     it 'should call #gl.drawArrays() after INDEX is deleted', ->
       gl.bindVars {
         INDEX: [0, 1, 2]
@@ -177,5 +177,5 @@ describe 'MicroGL', ->
       expect(imagedata.length).toBe 64 * 32 * 4
 
     it 'should return image-data properly (check alpha == 255)', ->
-      for d in [3...imagedata.length] by 4 
+      for d in [3...imagedata.length] by 4
         expect(imagedata[d]).toBe 255
