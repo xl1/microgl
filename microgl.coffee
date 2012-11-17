@@ -133,25 +133,28 @@ class MicroGL
     obj = {}
     for name in Object.keys param
       value = param[name]
-      if not value?
-        obj[name] = null
-      else if uniform = @uniforms[name]
+      if uniform = @uniforms[name]
         if ~TYPESUFFIX[uniform.type].indexOf('Sampler')
           if cacheTexture
             value = @textures[name] = @texture(value, @textures[name])
           else
             value = @texture(value)
         obj[name] = value
-      else
+      else if attribute = @attributes[name]
         buffer = @gl.createBuffer()
-        if attribute = @attributes[name]
-          @gl.bindBuffer(@gl.ARRAY_BUFFER, buffer)
-          @gl.bufferData(@gl.ARRAY_BUFFER, new Float32Array(value), @gl.STATIC_DRAW)
-        else
-          @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, buffer)
-          @gl.bufferData(@gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(value), @gl.STATIC_DRAW)
+        @gl.bindBuffer(@gl.ARRAY_BUFFER, buffer)
+        @gl.bufferData(@gl.ARRAY_BUFFER, new Float32Array(value), @gl.STATIC_DRAW)
         buffer.length = value.length
         obj[name] = buffer
+      else if name is 'INDEX'
+        if value
+          buffer = @gl.createBuffer()
+          @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, buffer)
+          @gl.bufferData(@gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(value), @gl.STATIC_DRAW)
+          buffer.length = value.length
+          obj[name] = buffer
+        else
+          obj[name] = null
     obj
 
 
@@ -179,17 +182,14 @@ class MicroGL
 
     for name in Object.keys obj
       value = obj[name]
-      if uniform = @uniforms[name]
+      if name is 'INDEX'
+        @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, value)
+        @_useElementArray = value?
+        @_numElements = value?.length
+      else if uniform = @uniforms[name]
         @_bindUniform(uniform, value)
       else if attribute = @attributes[name]
         @_bindAttribute(attribute, value)
-      else if value
-        @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, value)
-        @_numElements = value.length
-        @_useElementArray = true
-      else
-        @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, null)
-        @_useElementArray = false
     @
 
 

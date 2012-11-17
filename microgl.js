@@ -188,9 +188,7 @@
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         name = _ref[_i];
         value = param[name];
-        if (!(value != null)) {
-          obj[name] = null;
-        } else if (uniform = this.uniforms[name]) {
+        if (uniform = this.uniforms[name]) {
           if (~TYPESUFFIX[uniform.type].indexOf('Sampler')) {
             if (cacheTexture) {
               value = this.textures[name] = this.texture(value, this.textures[name]);
@@ -199,17 +197,22 @@
             }
           }
           obj[name] = value;
-        } else {
+        } else if (attribute = this.attributes[name]) {
           buffer = this.gl.createBuffer();
-          if (attribute = this.attributes[name]) {
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(value), this.gl.STATIC_DRAW);
-          } else {
-            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffer);
-            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(value), this.gl.STATIC_DRAW);
-          }
+          this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+          this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(value), this.gl.STATIC_DRAW);
           buffer.length = value.length;
           obj[name] = buffer;
+        } else if (name === 'INDEX') {
+          if (value) {
+            buffer = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffer);
+            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(value), this.gl.STATIC_DRAW);
+            buffer.length = value.length;
+            obj[name] = buffer;
+          } else {
+            obj[name] = null;
+          }
         }
       }
       return obj;
@@ -246,17 +249,14 @@
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         name = _ref[_i];
         value = obj[name];
-        if (uniform = this.uniforms[name]) {
+        if (name === 'INDEX') {
+          this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, value);
+          this._useElementArray = value != null;
+          this._numElements = value != null ? value.length : void 0;
+        } else if (uniform = this.uniforms[name]) {
           this._bindUniform(uniform, value);
         } else if (attribute = this.attributes[name]) {
           this._bindAttribute(attribute, value);
-        } else if (value) {
-          this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, value);
-          this._numElements = value.length;
-          this._useElementArray = true;
-        } else {
-          this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
-          this._useElementArray = false;
         }
       }
       return this;
