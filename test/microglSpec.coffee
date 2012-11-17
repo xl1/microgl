@@ -40,6 +40,14 @@ describe 'MicroGL', ->
       expect(width).toBe 256
       expect(height).toBe 128
 
+    it 'should set #width and #height', ->
+      gl.init(null, 128, 256)
+      expect(gl.width).toBe 128
+      expect(gl.height).toBe 256
+
+    # canvas.style.width|height を
+    # devicePixelRatio に応じてでかくする必要がある
+
   describe '#makeProgram()', ->
     it 'should return a program', ->
       program = gl.makeProgram(vshader, fshader)
@@ -73,6 +81,18 @@ describe 'MicroGL', ->
       tex = null
       gl.texture 'test/test.jpg', null, (t) -> tex = t
       waitsFor 1000, -> !!tex
+
+    it 'should not create texture if 1st argument is a WebGLTexture', ->
+      tex = gl.texture 'test/test.jpg'
+      spyOn(gl.gl, 'createTexture').andCallThrough()
+      gl.texture tex
+      expect(gl.gl.createTexture).not.toHaveBeenCalled()
+
+    it 'should not create texture if 2nd argument is a WebGLTexture', ->
+      tex = gl.texture 'test/test.jpg'
+      spyOn(gl.gl, 'createTexture').andCallThrough()
+      gl.texture 'test/test.jpg', tex
+      expect(gl.gl.createTexture).not.toHaveBeenCalled()
 
   describe '#variable()', ->
     gl.program vshader, fshader
@@ -122,6 +142,7 @@ describe 'MicroGL', ->
       }
       spyOn(gl.gl, 'drawArrays').andCallThrough()
       gl.draw()
+      expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
       expect(gl.gl.drawArrays).toHaveBeenCalledWith(gl.gl.TRIANGLE_STRIP, 0, 3)
 
     it 'should allow to change drawing mode', ->
@@ -132,6 +153,7 @@ describe 'MicroGL', ->
       }
       spyOn(gl.gl, 'drawArrays').andCallThrough()
       gl.draw 'TRIANGLES'
+      expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
       expect(gl.gl.drawArrays).toHaveBeenCalledWith(gl.gl.TRIANGLES, 0, 3)
 
     it 'should call #gl.drawElements() if INDEX is given', ->
@@ -145,6 +167,10 @@ describe 'MicroGL', ->
       }
       spyOn(gl.gl, 'drawElements').andCallThrough()
       gl.draw()
+      # drawElements() が正しい引数で呼ばれたとしても
+      # もし element array buffer が正しく bind されていないと
+      # `no ELEMENT_ARRAY_BUFFER bound` error が発生するかもしれない
+      expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
       expect(gl.gl.drawElements.mostRecentCall.args[0..1]).toEqual [gl.gl.TRIANGLES, 3]
 
     it 'should call #gl.drawArrays() after INDEX is deleted', ->
@@ -159,6 +185,7 @@ describe 'MicroGL', ->
       }
       spyOn(gl.gl, 'drawArrays').andCallThrough()
       gl.draw()
+      expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
       expect(gl.gl.drawArrays).toHaveBeenCalledWith(gl.gl.TRIANGLE_STRIP, 0, 3)
 
   describe '#read()', ->

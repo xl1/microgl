@@ -157,6 +157,9 @@
     MicroGL.prototype.texture = function(source, tex, callback) {
       var img,
         _this = this;
+      if (source instanceof WebGLTexture) {
+        return source;
+      }
       if (tex == null) {
         tex = this.gl.createTexture();
       }
@@ -172,8 +175,6 @@
           }
         };
         img.src = source;
-      } else if (source instanceof WebGLTexture) {
-        tex = source;
       } else {
         this._setTexture(source, tex);
       }
@@ -241,7 +242,6 @@
     MicroGL.prototype.bind = function(obj) {
       var attribute, name, uniform, value, _i, _len, _ref;
       this._drawArg = void 0;
-      this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
       _ref = Object.keys(obj);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         name = _ref[_i];
@@ -255,6 +255,7 @@
           this._numElements = value.length;
           this._useElementArray = true;
         } else {
+          this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
           this._useElementArray = false;
         }
       }
@@ -268,10 +269,10 @@
     MicroGL.prototype.frame = function(width, height, option) {
       var fb, rb, tex;
       if (width == null) {
-        width = this.gl.canvas.width;
+        width = this.width;
       }
       if (height == null) {
-        height = this.gl.canvas.height;
+        height = this.height;
       }
       fb = this.gl.createFramebuffer();
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fb);

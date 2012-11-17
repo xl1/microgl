@@ -111,6 +111,7 @@ class MicroGL
     @gl.bindTexture(@gl.TEXTURE_2D, null)
 
   texture: (source, tex, callback) ->
+    return source if source instanceof WebGLTexture
     tex ?= @gl.createTexture()
     if typeof source is 'string'
       img = document.createElement('img')
@@ -122,8 +123,6 @@ class MicroGL
           @gl.bindTexture(@gl.TEXTURE_2D, tex)
           @draw(@_drawArg...)
       img.src = source
-    else if source instanceof WebGLTexture
-      tex = source
     else
       # <img>, <video>, <canvas>, ImageData object, etc.
       @_setTexture(source, tex)
@@ -178,7 +177,6 @@ class MicroGL
   bind: (obj) ->
     @_drawArg = undefined
 
-    @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, null)
     for name in Object.keys obj
       value = obj[name]
       if uniform = @uniforms[name]
@@ -190,6 +188,7 @@ class MicroGL
         @_numElements = value.length
         @_useElementArray = true
       else
+        @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, null)
         @_useElementArray = false
     @
 
@@ -198,7 +197,7 @@ class MicroGL
     @bind @variable(param, true)
 
 
-  frame: (width=@gl.canvas.width, height=@gl.canvas.height, option) ->
+  frame: (width=@width, height=@height, option) ->
     # option = color:true, depth:true, stencil:true
     fb = @gl.createFramebuffer()
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, fb)
