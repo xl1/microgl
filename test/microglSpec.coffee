@@ -192,8 +192,8 @@ describe 'MicroGL', ->
     gl.init(document.body, 64, 32)
     gl.program vshader, fshader
     gl.bindVars {
-      a_position: [0,0,1,1, 0,1,1,1, 1,1,1,1]
-      a_texCoord: [0,0, 0,1, 1,1]
+      a_position: [-1,-1,1,1, -1,1,1,1, 1,-1,1,1, 1,1,1,1]
+      a_texCoord: [0,0, 0,1, 1,0, 1,1]
       u_sampler: 'test/test.jpg'
     }
     gl.clear()
@@ -206,3 +206,67 @@ describe 'MicroGL', ->
     it 'should return image-data properly (check alpha == 255)', ->
       for d in [3...imagedata.length] by 4
         expect(imagedata[d]).toBe 255
+
+
+  fshader_multi = '''
+    precision mediump float;
+    uniform sampler2D red;
+    uniform sampler2D u_sampler;
+    varying vec2 v_texCoord;
+    void main(){
+      vec4 color = texture2D(red, vec2(0.0, 0.0));
+      if(color.r == 0.0){ // expect to be false
+        gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+      } else {
+        gl_FragColor = texture2D(u_sampler, vec2(0.5, 0.5));
+      }
+    }
+  '''
+
+  describe '[testing multiple texture]', ->
+    loaded = 0
+    images = {}
+    prepareImage = (src, name) ->
+      img = document.createElement 'img'
+      img.onload = ->
+        images[name] = img
+        loaded++
+      img.src = src
+
+    prepareImage 'test/red.gif', 'red'
+    prepareImage 'test/test.jpg', 'u_sampler'
+
+    it 'texture2D() (in shaders) should return property values', ->
+      waitsFor 1000, -> loaded is 2
+      runs ->
+        gl.init(null, 1, 1).program vshader, fshader_multi
+        gl.bindVars(
+          a_position:[-1,-1,1,1, -1,1,1,1, 1,-1,1,1, 1,1,1,1]
+          a_texCoord: [0,0, 0,1, 1,0, 1,1]
+          red: images.red
+        ).bindVars(
+          u_sampler: images.u_sampler
+        ).draw()
+        imagedata = gl.read()
+
+        expect(imagedata[0]).not.toBe 0
+        expect(imagedata[1]).not.toBe 255
+        expect(imagedata[2]).not.toBe 0
+        expect(imagedata[3]).toBe 255
+
+    it 'texture2D() (in shaders) should return property values', ->
+      waitsFor 1000, -> loaded is 2
+      runs ->
+        gl.init(null, 1, 1).program vshader, fshader_multi
+        gl.bindVars(
+          a_position:[-1,-1,1,1, -1,1,1,1, 1,-1,1,1, 1,1,1,1]
+          a_texCoord: [0,0, 0,1, 1,0, 1,1]
+          red: images.red
+          u_sampler: images.u_sampler
+        ).draw()
+        imagedata = gl.read()
+
+        expect(imagedata[0]).not.toBe 0
+        expect(imagedata[1]).not.toBe 255
+        expect(imagedata[2]).not.toBe 0
+        expect(imagedata[3]).toBe 255

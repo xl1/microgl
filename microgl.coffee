@@ -30,7 +30,6 @@ class MicroGL
     c = document.createElement('canvas')
     @gl = c.getContext('webgl', opt) or c.getContext('experimental-webgl', opt)
     @enabled = !!@gl
-    return if not @gl
     @uniforms = {}
     @attributes = {}
     @textures = {}
@@ -96,7 +95,7 @@ class MicroGL
     @
 
 
-  _setTexture: (img, tex, empty) =>
+  _setTexture: (img, tex, empty) ->
     @gl.bindTexture(@gl.TEXTURE_2D, tex)
     @gl.pixelStorei(@gl.UNPACK_FLIP_Y_WEBGL, true)
     @gl.texParameteri(@gl.TEXTURE_2D, @gl.TEXTURE_MAG_FILTER, @gl.LINEAR)
@@ -108,7 +107,7 @@ class MicroGL
         img.width, img.height, 0, @gl.RGBA, @gl.UNSIGNED_BYTE, null)
     else
       @gl.texImage2D(@gl.TEXTURE_2D, 0, @gl.RGBA, @gl.RGBA, @gl.UNSIGNED_BYTE, img)
-    @gl.bindTexture(@gl.TEXTURE_2D, null)
+    #@gl.bindTexture(@gl.TEXTURE_2D, null)
 
   texture: (source, tex, callback) ->
     return source if source instanceof WebGLTexture
