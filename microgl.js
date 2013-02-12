@@ -58,6 +58,7 @@
       this.uniforms = {};
       this.attributes = {};
       this.textures = {};
+      this.cache = {};
     }
 
     MicroGL.prototype.init = function(elem, width, height) {
@@ -188,7 +189,7 @@
         if (uniform = this.uniforms[name]) {
           if (~TYPESUFFIX[uniform.type].indexOf('Sampler')) {
             if (cacheTexture) {
-              value = this.textures[name] = this.texture(value, this.textures[name]);
+              value = this.cache[name] = this.texture(value, this.cache[name]);
             } else {
               value = this.texture(value);
             }

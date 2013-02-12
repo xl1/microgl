@@ -33,6 +33,7 @@ class MicroGL
     @uniforms = {}
     @attributes = {}
     @textures = {}
+    @cache = {}
 
 
   init: (elem, width=256, height=256) ->
@@ -138,7 +139,7 @@ class MicroGL
       if uniform = @uniforms[name]
         if ~TYPESUFFIX[uniform.type].indexOf('Sampler')
           if cacheTexture
-            value = @textures[name] = @texture(value, @textures[name])
+            value = @cache[name] = @texture(value, @cache[name])
           else
             value = @texture(value)
         obj[name] = value

@@ -229,7 +229,7 @@ describe 'MicroGL', ->
     }
   '''
 
-  describe '[testing multiple texture]', ->
+  describe '[testing multiple texturing]', ->
     loaded = 0
     images = {}
     prepareImage = (src, name) ->
@@ -275,4 +275,23 @@ describe 'MicroGL', ->
         expect(imagedata[0]).not.toBe 0
         expect(imagedata[1]).not.toBe 255
         expect(imagedata[2]).not.toBe 0
+        expect(imagedata[3]).toBe 255
+
+    it 'bind packed variables & unpacked ones repeatedly', ->
+      waitsFor 1000, -> loaded is 2
+      runs ->
+        gl.init(null, 1, 1).program vshader, fshader
+        vari = gl.variable { u_sampler: images.red }
+        gl.bind(vari)
+        gl.bindVars {
+          a_position:[-1,-1,1,1, -1,1,1,1, 1,-1,1,1, 1,1,1,1]
+          a_texCoord: [0,0, 0,1, 1,0, 1,1]
+          u_sampler: images.u_sampler
+        }
+        gl.bind(vari)
+        imagedata = gl.draw().read()
+
+        expect(imagedata[0]).toBe 255
+        expect(imagedata[1]).toBe 0
+        expect(imagedata[2]).toBe 0
         expect(imagedata[3]).toBe 255
