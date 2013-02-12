@@ -73,24 +73,27 @@ class MicroGL
     @uniforms = {}
     @attributes = {}
     @_useElementArray = false
-    @_texnum = 0
 
     @gl.useProgram(program)
     for i in [0...@gl.getProgramParameter(program, @gl.ACTIVE_UNIFORMS)]
       uniform = @gl.getActiveUniform(program, i)
-      @uniforms[uniform.name] = {
-        location: @gl.getUniformLocation(program, uniform.name)
+      name = uniform.name
+      @uniforms[name] = {
+        location: @gl.getUniformLocation(program, name)
         type: uniform.type
         size: uniform.size # array length
+        name
       }
     for i in [0...@gl.getProgramParameter(program, @gl.ACTIVE_ATTRIBUTES)]
       attribute = @gl.getActiveAttrib(program, i)
-      loc = @gl.getAttribLocation(program, attribute.name)
+      name = attribute.name
+      loc = @gl.getAttribLocation(program, name)
       @gl.enableVertexAttribArray(loc)
-      @attributes[attribute.name] = {
+      @attributes[name] = {
         location: loc
         type: attribute.type
         size: attribute.size
+        name
       }
     @
 
@@ -107,7 +110,7 @@ class MicroGL
         img.width, img.height, 0, @gl.RGBA, @gl.UNSIGNED_BYTE, null)
     else
       @gl.texImage2D(@gl.TEXTURE_2D, 0, @gl.RGBA, @gl.RGBA, @gl.UNSIGNED_BYTE, img)
-    #@gl.bindTexture(@gl.TEXTURE_2D, null)
+    @gl.bindTexture(@gl.TEXTURE_2D, null)
 
   texture: (source, tex, callback) ->
     return source if source instanceof WebGLTexture
@@ -160,15 +163,28 @@ class MicroGL
   _bindUniform: (uniform, value) ->
     suffix = TYPESUFFIX[uniform.type]
     if ~suffix.indexOf('Sampler')
-      type = if suffix is 'Sampler2D' then @gl.TEXTURE_2D else @gl.TEXTURE_CUBE_MAP
-      @gl.activeTexture(@gl['TEXTURE' + @_texnum])
-      @gl.bindTexture(type, value)
-      @gl.uniform1i(uniform.location, @_texnum)
-      @_texnum++
+      @textures[uniform.name] = value
     else if ~suffix.indexOf('Matrix')
       @gl["uniform" + suffix](uniform.location, false, new Float32Array(value))
     else
       @gl["uniform" + suffix](uniform.location, value)
+
+
+  _rebindTexture: ->
+    texIndex = 0
+    for name in Object.keys @uniforms
+      uniform = @uniforms[name]
+      if uniform.type is @gl.SAMPLER_2D
+        type = @gl.TEXTURE_2D
+      else if uniform.type is @gl.SAMPLER_CUBE
+        type = @gl.TEXTURE_CUBE_MAP
+      else continue
+      @gl.activeTexture(@gl['TEXTURE' + texIndex])
+      @gl.bindTexture(type, @textures[name])
+      @gl.uniform1i(uniform.location, texIndex)
+      texIndex++
+    @
+
 
   _bindAttribute: (attribute, value) ->
     size = TYPESIZE[attribute.type]
@@ -220,6 +236,7 @@ class MicroGL
 
 
   draw: (type, num) ->
+    @_rebindTexture()
     if @_useElementArray
       num ?= @_numElements
       @gl.drawElements(@gl[type or 'TRIANGLES'], num, @gl.UNSIGNED_SHORT, 0)
@@ -227,7 +244,6 @@ class MicroGL
       num ?= @_numArrays
       @gl.drawArrays(@gl[type or 'TRIANGLE_STRIP'], 0, num)
     @_drawArg = [type, num]
-    @_texnum = 0
     @
 
   drawFrame: (fb, type, num) ->

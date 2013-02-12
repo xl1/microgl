@@ -105,29 +105,32 @@
     };
 
     MicroGL.prototype.program = function(vsSource, fsSource) {
-      var attribute, i, loc, program, uniform, _i, _j, _ref, _ref1;
+      var attribute, i, loc, name, program, uniform, _i, _j, _ref, _ref1;
       program = fsSource ? this.makeProgram(vsSource, fsSource) : vsSource;
       this.uniforms = {};
       this.attributes = {};
       this._useElementArray = false;
-      this._texnum = 0;
       this.gl.useProgram(program);
       for (i = _i = 0, _ref = this.gl.getProgramParameter(program, this.gl.ACTIVE_UNIFORMS); 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
         uniform = this.gl.getActiveUniform(program, i);
-        this.uniforms[uniform.name] = {
-          location: this.gl.getUniformLocation(program, uniform.name),
+        name = uniform.name;
+        this.uniforms[name] = {
+          location: this.gl.getUniformLocation(program, name),
           type: uniform.type,
-          size: uniform.size
+          size: uniform.size,
+          name: name
         };
       }
       for (i = _j = 0, _ref1 = this.gl.getProgramParameter(program, this.gl.ACTIVE_ATTRIBUTES); 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
         attribute = this.gl.getActiveAttrib(program, i);
-        loc = this.gl.getAttribLocation(program, attribute.name);
+        name = attribute.name;
+        loc = this.gl.getAttribLocation(program, name);
         this.gl.enableVertexAttribArray(loc);
-        this.attributes[attribute.name] = {
+        this.attributes[name] = {
           location: loc,
           type: attribute.type,
-          size: attribute.size
+          size: attribute.size,
+          name: name
         };
       }
       return this;
@@ -141,10 +144,11 @@
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
       if (empty) {
-        return this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, img.width, img.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, img.width, img.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
       } else {
-        return this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
       }
+      return this.gl.bindTexture(this.gl.TEXTURE_2D, null);
     };
 
     MicroGL.prototype.texture = function(source, tex, callback) {
@@ -212,19 +216,37 @@
     };
 
     MicroGL.prototype._bindUniform = function(uniform, value) {
-      var suffix, type;
+      var suffix;
       suffix = TYPESUFFIX[uniform.type];
       if (~suffix.indexOf('Sampler')) {
-        type = suffix === 'Sampler2D' ? this.gl.TEXTURE_2D : this.gl.TEXTURE_CUBE_MAP;
-        this.gl.activeTexture(this.gl['TEXTURE' + this._texnum]);
-        this.gl.bindTexture(type, value);
-        this.gl.uniform1i(uniform.location, this._texnum);
-        return this._texnum++;
+        return this.textures[uniform.name] = value;
       } else if (~suffix.indexOf('Matrix')) {
         return this.gl["uniform" + suffix](uniform.location, false, new Float32Array(value));
       } else {
         return this.gl["uniform" + suffix](uniform.location, value);
       }
+    };
+
+    MicroGL.prototype._rebindTexture = function() {
+      var name, texIndex, type, uniform, _i, _len, _ref;
+      texIndex = 0;
+      _ref = Object.keys(this.uniforms);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        name = _ref[_i];
+        uniform = this.uniforms[name];
+        if (uniform.type === this.gl.SAMPLER_2D) {
+          type = this.gl.TEXTURE_2D;
+        } else if (uniform.type === this.gl.SAMPLER_CUBE) {
+          type = this.gl.TEXTURE_CUBE_MAP;
+        } else {
+          continue;
+        }
+        this.gl.activeTexture(this.gl['TEXTURE' + texIndex]);
+        this.gl.bindTexture(type, this.textures[name]);
+        this.gl.uniform1i(uniform.location, texIndex);
+        texIndex++;
+      }
+      return this;
     };
 
     MicroGL.prototype._bindAttribute = function(attribute, value) {
@@ -286,6 +308,7 @@
     };
 
     MicroGL.prototype.draw = function(type, num) {
+      this._rebindTexture();
       if (this._useElementArray) {
         if (num == null) {
           num = this._numElements;
@@ -298,7 +321,6 @@
         this.gl.drawArrays(this.gl[type || 'TRIANGLE_STRIP'], 0, num);
       }
       this._drawArg = [type, num];
-      this._texnum = 0;
       return this;
     };
 

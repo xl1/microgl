@@ -189,23 +189,29 @@ describe 'MicroGL', ->
       expect(gl.gl.drawArrays).toHaveBeenCalledWith(gl.gl.TRIANGLE_STRIP, 0, 3)
 
   describe '#read()', ->
-    gl.init(document.body, 64, 32)
+    imagedata = null
+    gl.init(document.body, 8, 8)
     gl.program vshader, fshader
-    gl.bindVars {
-      a_position: [-1,-1,1,1, -1,1,1,1, 1,-1,1,1, 1,1,1,1]
-      a_texCoord: [0,0, 0,1, 1,0, 1,1]
-      u_sampler: 'test/test.jpg'
-    }
-    gl.clear()
-    gl.draw()
-    imagedata = gl.read()
+    gl.texture 'test/red.gif', null, (tex) ->
+      gl.bindVars {
+        a_position: [-1,-1,1,1, -1,1,1,1, 1,-1,1,1, 1,1,1,1]
+        a_texCoord: [0,0, 0,1, 1,0, 1,1]
+        u_sampler: tex
+      }
+      gl.draw()
+      imagedata = gl.read()
 
     it 'should return an array-like, its length is "width x height x 4"', ->
-      expect(imagedata.length).toBe 64 * 32 * 4
+      expect(imagedata.length).toBe 8 * 8 * 4
 
-    it 'should return image-data properly (check alpha == 255)', ->
-      for d in [3...imagedata.length] by 4
-        expect(imagedata[d]).toBe 255
+    it 'should return image-data properly', ->
+      waitsFor 1000, -> !!imagedata
+      runs ->
+        for i in [0...imagedata.length] by 4
+          expect(imagedata[i  ]).toBe 255
+          expect(imagedata[i+1]).toBe 0
+          expect(imagedata[i+2]).toBe 0
+          expect(imagedata[i+3]).toBe 255
 
 
   fshader_multi = '''
@@ -215,7 +221,7 @@ describe 'MicroGL', ->
     varying vec2 v_texCoord;
     void main(){
       vec4 color = texture2D(red, vec2(0.0, 0.0));
-      if(color.r == 0.0){ // expect to be false
+      if(color.r != 1.0){ // expect to be false
         gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
       } else {
         gl_FragColor = texture2D(u_sampler, vec2(0.5, 0.5));
