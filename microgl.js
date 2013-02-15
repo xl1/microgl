@@ -22,6 +22,14 @@
 
   TYPESUFFIX[glproto.INT_VEC4] = '4iv';
 
+  TYPESUFFIX[glproto.BOOL] = '1i';
+
+  TYPESUFFIX[glproto.BOOL_VEC2] = '2iv';
+
+  TYPESUFFIX[glproto.BOOL_VEC3] = '3iv';
+
+  TYPESUFFIX[glproto.BOOL_VEC4] = '4iv';
+
   TYPESUFFIX[glproto.FLOAT_MAT2] = 'Matrix2fv';
 
   TYPESUFFIX[glproto.FLOAT_MAT3] = 'Matrix3fv';
@@ -41,6 +49,22 @@
   TYPESIZE[glproto.FLOAT_VEC3] = 3;
 
   TYPESIZE[glproto.FLOAT_VEC4] = 4;
+
+  TYPESIZE[glproto.INT] = 1;
+
+  TYPESIZE[glproto.INT_VEC2] = 2;
+
+  TYPESIZE[glproto.INT_VEC3] = 3;
+
+  TYPESIZE[glproto.INT_VEC4] = 4;
+
+  TYPESIZE[glproto.BOOL] = 1;
+
+  TYPESIZE[glproto.BOOL_VEC2] = 2;
+
+  TYPESIZE[glproto.BOOL_VEC3] = 3;
+
+  TYPESIZE[glproto.BOOL_VEC4] = 4;
 
   TYPESIZE[glproto.FLOAT_MAT2] = 4;
 

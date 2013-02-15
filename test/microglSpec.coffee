@@ -120,6 +120,57 @@ describe 'MicroGL', ->
       gl.bindVars { u_sampler: 'test/test.jpg' }
       expect(gl.gl.createTexture).not.toHaveBeenCalled()
 
+    fshader_uniformtest = '''
+      precision mediump float;
+      uniform float u_float;
+      uniform vec2  u_vec2;
+      uniform vec3  u_vec3;
+      uniform vec4  u_vec4;
+      uniform int   u_int;
+      uniform ivec2 u_ivec2;
+      uniform ivec3 u_ivec3;
+      uniform ivec4 u_ivec4;
+      uniform bool  u_bool;
+      uniform bvec2 u_bvec2;
+      uniform bvec3 u_bvec3;
+      uniform bvec4 u_bvec4;
+      uniform mat2  u_mat2;
+      uniform mat3  u_mat3;
+      uniform mat4  u_mat4;
+      varying vec2 v_texCoord;
+      void main(){
+        gl_FragColor = u_mat4 * vec4(
+          u_mat2[0].x, u_mat3[1].y, u_mat4[2].z, v_texCoord.x
+        ) * vec4(
+          u_float * float(u_int) * float(u_bool),
+          u_vec2.x * float(u_ivec2.x) * float(u_bvec2.x),
+          u_vec3.x * float(u_ivec3.x) * float(u_bvec3.x),
+          u_vec4.x * float(u_ivec4.x) * float(u_bvec4.x)
+        );
+      }
+    '''
+
+    it 'should bind (float/int/bool)(unit/vector/matrix) uniform values', ->
+      gl.program vshader, fshader_uniformtest
+      gl.bindVars {
+        u_float: 1
+        u_vec2:  [1, 1]
+        u_vec3:  [1, 1, 1]
+        u_vec4:  [1, 1, 1, 1]
+        u_int:   1
+        u_ivec2: [1, 1]
+        u_ivec3: [1, 1, 1]
+        u_ivec4: [1, 1, 1, 1]
+        u_bool:  true
+        u_bvec2: [true, true]
+        u_bvec3: [true, true, true]
+        u_bvec4: [true, true, true, true]
+        u_mat2:  [1, 0, 0, 1]
+        u_mat3:  [1, 0, 0, 0, 1, 0, 0, 0, 1]
+        u_mat4:  [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+      }
+      expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
+
   describe '#frame()', ->
     it 'should return a framebuffer', ->
       frame = gl.frame()

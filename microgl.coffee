@@ -1,5 +1,6 @@
 glproto = WebGLRenderingContext.prototype
 
+# uniform type suffix
 TYPESUFFIX = {}
 TYPESUFFIX[glproto.FLOAT]        = '1f'
 TYPESUFFIX[glproto.FLOAT_VEC2]   = '2fv'
@@ -9,17 +10,30 @@ TYPESUFFIX[glproto.INT]          = '1i'
 TYPESUFFIX[glproto.INT_VEC2]     = '2iv'
 TYPESUFFIX[glproto.INT_VEC3]     = '3iv'
 TYPESUFFIX[glproto.INT_VEC4]     = '4iv'
+TYPESUFFIX[glproto.BOOL]         = '1i'
+TYPESUFFIX[glproto.BOOL_VEC2]    = '2iv'
+TYPESUFFIX[glproto.BOOL_VEC3]    = '3iv'
+TYPESUFFIX[glproto.BOOL_VEC4]    = '4iv'
 TYPESUFFIX[glproto.FLOAT_MAT2]   = 'Matrix2fv'
 TYPESUFFIX[glproto.FLOAT_MAT3]   = 'Matrix3fv'
 TYPESUFFIX[glproto.FLOAT_MAT4]   = 'Matrix4fv'
 TYPESUFFIX[glproto.SAMPLER_2D]   = 'Sampler2D'
 TYPESUFFIX[glproto.SAMPLER_CUBE] = 'SamplerCube'
 
+# attribute type sizes
 TYPESIZE = {}
 TYPESIZE[glproto.FLOAT]      = 1
 TYPESIZE[glproto.FLOAT_VEC2] = 2
 TYPESIZE[glproto.FLOAT_VEC3] = 3
 TYPESIZE[glproto.FLOAT_VEC4] = 4
+TYPESIZE[glproto.INT]        = 1
+TYPESIZE[glproto.INT_VEC2]   = 2
+TYPESIZE[glproto.INT_VEC3]   = 3
+TYPESIZE[glproto.INT_VEC4]   = 4
+TYPESIZE[glproto.BOOL]       = 1
+TYPESIZE[glproto.BOOL_VEC2]  = 2
+TYPESIZE[glproto.BOOL_VEC3]  = 3
+TYPESIZE[glproto.BOOL_VEC4]  = 4
 TYPESIZE[glproto.FLOAT_MAT2] = 4
 TYPESIZE[glproto.FLOAT_MAT3] = 9
 TYPESIZE[glproto.FLOAT_MAT4] = 16
