@@ -161,19 +161,32 @@
       return this;
     };
 
+    MicroGL.prototype.texParameter = function(tex, param) {
+      var filter, tex2d, wrap, _ref, _ref1;
+      if (param == null) {
+        param = {};
+      }
+      tex2d = this.gl.TEXTURE_2D;
+      filter = this.gl[(_ref = param.filter) != null ? _ref : 'LINEAR'];
+      wrap = this.gl[(_ref1 = param.wrap) != null ? _ref1 : 'CLAMP_TO_EDGE'];
+      this.gl.bindTexture(tex2d, tex);
+      this.gl.texParameteri(tex2d, this.gl.TEXTURE_MAG_FILTER, filter);
+      this.gl.texParameteri(tex2d, this.gl.TEXTURE_MIN_FILTER, filter);
+      this.gl.texParameteri(tex2d, this.gl.TEXTURE_WRAP_S, wrap);
+      this.gl.texParameteri(tex2d, this.gl.TEXTURE_WRAP_T, wrap);
+      return this.gl.bindTexture(tex2d, null);
+    };
+
     MicroGL.prototype._setTexture = function(img, tex, empty) {
       this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
       this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
-      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
       if (empty) {
         this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, img.width, img.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
       } else {
         this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
       }
-      return this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+      return this.texParameter(tex);
     };
 
     MicroGL.prototype.texture = function(source, tex, callback) {
