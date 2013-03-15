@@ -124,6 +124,7 @@ class MicroGL
     @gl.texParameteri(tex2d, @gl.TEXTURE_WRAP_S, wrap)
     @gl.texParameteri(tex2d, @gl.TEXTURE_WRAP_T, wrap)
     @gl.bindTexture(tex2d, null)
+    @
 
   _setTexture: (img, tex, empty) ->
     @gl.bindTexture(@gl.TEXTURE_2D, tex)
