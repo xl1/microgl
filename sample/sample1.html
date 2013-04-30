@@ -32,7 +32,7 @@ function $text(id){
 function main(){
   // append <canvas> element to <body>
   gl.init(document.body, 256, 256);
-  // compile shaders and link program
+  // compile shaders and link the program
   gl.program($text('vshader'), $text('fshader'));
   // bind variables
   gl.bindVars({
@@ -40,7 +40,7 @@ function main(){
     // images will be loaded asynchronously
     // use `gl.texture(img, tex, callback)` to listen img.onload
     u_sampler: 'test.jpg',
-    // matrix is transposed in shaders
+    // matrices are transposed in shaders
     u_perspective: [
       2, 0, 0, 0,
       0, 2, 0, 0,
