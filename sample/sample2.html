@@ -1,0 +1,100 @@
+<!doctype html>
+<meta charset="UTF-8">
+<script type="x-shader/x-vertex" id="vshader">
+attribute vec3 a_position;
+attribute vec3 a_normal;
+uniform mat4 u_modelView;
+uniform mat4 u_perspective;
+varying vec3 v_normal;
+
+void main(){
+  gl_Position = u_perspective * u_modelView * vec4(a_position, 1.0);
+  v_normal = (u_modelView * vec4(a_normal, 0.0)).xyz;
+}
+</script>
+<script type="x-shader/x-fragment" id="fshader">
+precision mediump float;
+
+uniform vec3 u_light;
+varying vec3 v_normal;
+const vec3 color = vec3(1.0, 0.0, 0.0);
+
+void main(){
+  vec3 light = normalize(u_light);
+  gl_FragColor = vec4(dot(light, v_normal) * color, 1.0);
+}
+</script>
+<script src="../microgl.js"></script>
+<script>
+var gl = new MicroGL(), startT = 0;
+
+function $text(id){
+  return document.getElementById(id).textContent;
+}
+
+function makeTorus(){
+  var positions = new Float32Array(6 * 36 * 37),
+      normals = new Float32Array(6 * 36 * 37),
+      idx,
+      s, p,
+      cost, sint, coss = 1, sins = 0, cosp, sinp;
+
+  for(var i = 0; i < 36; i++){
+    cost = coss;
+    sint = sins;
+    s = Math.PI * (i + 1) / 18;
+    coss = Math.cos(s);
+    sins = Math.sin(s);
+
+    for(var j = 0; j < 37; j++){
+      idx = 6 * (i * 37 + j);
+      p = Math.PI * j / 18;
+      cosp = Math.cos(p);
+      sinp = Math.sin(p);
+      positions.set([
+        cost * (2 + cosp), sint * (2 + cosp), sinp,
+        coss * (2 + cosp), sins * (2 + cosp), sinp
+      ], idx);
+      normals.set([
+        cost * cosp, sint * cosp, sinp,
+        coss * cosp, sins * cosp, sinp
+      ], idx)
+    }
+  }
+  return { positions: positions, normals: normals };
+}
+
+function main(){
+  torus = makeTorus()
+  gl.init(document.body, 256, 256)
+    .program($text('vshader'), $text('fshader'))
+    .bindVars({
+      a_position: torus.positions,
+      a_normal: torus.normals,
+      u_light: [-1, 1, -1],
+      u_perspective: [
+        2, 0, 0, 0,
+        0, 2, 0, 0,
+        0, 0, 1.01, 1,
+        0, 0, -1.01, 0
+      ]
+    })
+  startT = Date.now();
+  update();
+}
+
+function update(){
+  var t = (Date.now() - startT) * 0.003;
+  gl.bindVars({
+    u_modelView: [
+      Math.cos(t), 0, Math.sin(t), 0,
+                0, 1,           0, 0,
+     -Math.sin(t), 0, Math.cos(t), 0,
+                0, 0,          10, 1
+    ]
+  }).clear().draw();
+  requestAnimationFrame(update);
+}
+
+document.addEventListener('DOMContentLoaded', main, false);
+</script>
