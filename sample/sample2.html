@@ -58,15 +58,15 @@ function makeTorus(){
       normals.set([
         cost * cosp, sint * cosp, sinp,
         coss * cosp, sins * cosp, sinp
-      ], idx)
+      ], idx);
     }
   }
   return { positions: positions, normals: normals };
 }
 
 function main(){
-  torus = makeTorus()
-  gl.init(document.body, 256, 256)
+  torus = makeTorus();
+  gl.init(document.body)
     .program($text('vshader'), $text('fshader'))
     .bindVars({
       a_position: torus.positions,
@@ -78,7 +78,7 @@ function main(){
         0, 0, 1.01, 1,
         0, 0, -1.01, 0
       ]
-    })
+    });
   startT = Date.now();
   update();
 }

@@ -1,0 +1,179 @@
+<!doctype html>
+<meta charset="UTF-8">
+<script type="x-shader/x-vertex" id="vshader">
+attribute vec3 a_position;
+attribute vec3 a_normal;
+uniform float u_scale;
+uniform vec3 u_rotate;
+uniform vec3 u_translate;
+uniform mat4 u_perspective;
+varying vec3 v_normal;
+
+void main(){
+  vec3 sinr = sin(u_rotate);
+  vec3 cosr = cos(u_rotate);
+  mat3 rotateMatrix =
+    mat3(cosr.z, -sinr.z, 0.0, sinr.z, cosr.z, 0.0, 0.0, 0.0, 1.0) *
+    mat3(cosr.y, 0.0, sinr.y, 0.0, 1.0, 0.0, -sinr.y, 0.0, cosr.y) *
+    mat3(1.0, 0.0, 0.0, 0.0, cosr.x, -sinr.x, 0.0, sinr.x, cosr.x);
+
+  gl_Position = u_perspective *
+    vec4(u_translate + u_scale * rotateMatrix * a_position, 1.0);
+  v_normal = rotateMatrix * a_normal;
+}
+</script>
+<script type="x-shader/x-fragment" id="fshader">
+precision mediump float;
+
+uniform vec3 u_light;
+varying vec3 v_normal;
+const vec3 color = vec3(1.0, 0.0, 0.0);
+
+void main(){
+  vec3 light = normalize(u_light);
+  gl_FragColor = vec4(dot(light, v_normal) * color, 1.0);
+}
+</script>
+<script src="../microgl.js"></script>
+<script>
+var gl = new MicroGL(), startT = 0, objCollection = [];
+
+function $text(id){
+  return document.getElementById(id).textContent;
+}
+
+
+// rendered objects
+
+function RenderedObject(){
+  this.positions = [];
+  this.normals = [];
+  this.rotate = [0, 0, 0];
+  this.translate = [0, 0, 0];
+}
+RenderedObject.prototype.scale = 1;
+RenderedObject.prototype.bindVars = function(param){
+  gl.bindVars({
+    a_position: this.positions,
+    a_normal: this.normals,
+    INDEX: null,
+    u_scale: this.scale,
+    u_rotate: this.rotate,
+    u_translate: this.translate
+  });
+  if(param) gl.bindVars(param);
+};
+RenderedObject.prototype.render = function(){
+  this.bindVars();
+  gl.draw();
+};
+
+/*
+function Plane(){
+  RenderedObject.apply(this, arguments);
+
+  this.positions = new Float32Array([
+    -1, -1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0
+  ]);
+  this.normals = new Float32Array([
+    0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1
+  ]);
+}
+Plane.prototype = new RenderedObject();
+*/
+
+function Cube(){
+  RenderedObject.apply(this, arguments);
+
+  this.positions = new Float32Array([
+    -1, -1, -1, -1, -1, 1, -1, 1, -1, -1, 1, 1,
+    1, -1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1
+  ]);
+  this.normals = new Float32Array(this.positions);
+  this.indices = new Float32Array([
+    0, 1, 2, 1, 3, 2, 4, 6, 5, 5, 6, 7,
+    0, 4, 1, 1, 4, 5, 2, 3, 6, 3, 7, 6,
+    0, 2, 4, 2, 6, 4, 1, 5, 3, 3, 5, 7
+  ]);
+}
+Cube.prototype = new RenderedObject();
+Cube.prototype.bindVars = function(param){
+  gl.bindVars({
+    a_position: this.positions,
+    a_normal: this.normals,
+    INDEX: this.indices,
+    u_scale: this.scale,
+    u_rotate: this.rotate,
+    u_translate: this.translate
+  });
+  if(param) gl.bindVars(param);
+};
+
+function Torus(){
+  RenderedObject.apply(this, arguments);
+  var idx, s, p,
+      cost, sint, coss = 1, sins = 0, cosp, sinp;
+
+  this.positions = new Float32Array(6 * 36 * 37);
+  this.normals = new Float32Array(6 * 36 * 37);
+
+  for(var i = 0; i < 36; i++){
+    cost = coss;
+    sint = sins;
+    s = Math.PI * (i + 1) / 18;
+    coss = Math.cos(s);
+    sins = Math.sin(s);
+
+    for(var j = 0; j < 37; j++){
+      idx = 6 * (i * 37 + j);
+      p = Math.PI * j / 18;
+      cosp = Math.cos(p);
+      sinp = Math.sin(p);
+      this.positions.set([
+        cost * (2 + cosp), sint * (2 + cosp), sinp,
+        coss * (2 + cosp), sins * (2 + cosp), sinp
+      ], idx);
+      this.normals.set([
+        cost * cosp, sint * cosp, sinp,
+        coss * cosp, sins * cosp, sinp
+      ], idx);
+    }
+  }
+}
+Torus.prototype = new RenderedObject();
+
+
+function main(){
+  gl.init(document.body)
+    .program($text('vshader'), $text('fshader'))
+    .bindVars({
+      u_light: [-1, 1, -1],
+      u_perspective: [
+        2, 0, 0, 0,
+        0, 2, 0, 0,
+        0, 0, 1.01, 1,
+        0, 0, -1.01, 0
+      ]
+    });
+
+  torus = new Torus();
+  torus.translate = [0, 0, 10];
+  torus.render = function(t){
+    this.rotate = [t, t * 0.7, 0];
+    this.constructor.prototype.render.apply(this);
+  };
+  objCollection.push(torus);
+  
+  startT = Date.now();
+  update();
+}
+
+function update(){
+  var t = (Date.now() - startT) * 0.003;
+  gl.clear();
+  objCollection.forEach(function(obj){ obj.render(t); });
+  requestAnimationFrame(update);
+}
+
+document.addEventListener('DOMContentLoaded', main, false);
+</script>

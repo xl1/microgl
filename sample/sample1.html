@@ -23,7 +23,7 @@ void main(){
 </script>
 <script src="../microgl.js"></script>
 <script>
-var gl = new MicroGL(), t = 0;
+var gl = new MicroGL(), startT = 0;
 
 function $text(id){
   return document.getElementById(id).textContent;
@@ -48,11 +48,12 @@ function main(){
       0, 0, -1000/995, 0
     ]
   });
+  startT = Date.now();
   update();
 }
 
 function update(){
-  t += 0.05;
+  t = (Date.now() - startT) * 0.003;
   // update model-view matrix
   gl.bindVars({
     u_modelView: [
