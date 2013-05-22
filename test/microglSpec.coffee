@@ -71,13 +71,34 @@ describe 'MicroGL', ->
       unifs = Object.keys gl.uniforms
       expect(unifs).toContain 'u_sampler'
 
+  describe '#loadImages()', ->
+    it 'should callback after loading images', ->
+      loaded = false
+      gl.loadImages ['test/red.gif', 'test/test.jpg'], (red, test) ->
+        loaded = red.getAttribute('src') is 'test/red.gif' and
+                test.getAttribute('src') is 'test/test.jpg'
+      waitsFor 1000, -> loaded
+
+    it 'should allow 1st argument to be a string', ->
+      loaded = false
+      gl.loadImages 'test/red.gif', (red) ->
+        loaded = red.getAttribute('src') is 'test/red.gif'
+      waitsFor 1000, -> loaded
+
+    it 'should call 3rd argument function if loading failed', ->
+      failed = 0
+      gl.loadImages ['nonexist1', 'nonexist2'], (->), ->
+        # called only once
+        failed++
+      waitsFor 1000, -> failed is 1
+
   describe '#texture()', ->
     # prepareTexture() にリネームを検討中
     it 'should return a texture', ->
       tex = gl.texture 'test/test.jpg'
       expect(tex).toBeDefined()
 
-    it 'should callback after loading texture image', ->
+    it 'should callback after loading a texture image', ->
       tex = null
       gl.texture 'test/test.jpg', null, (t) -> tex = t
       waitsFor 1000, -> !!tex
@@ -93,6 +114,17 @@ describe 'MicroGL', ->
       spyOn(gl.gl, 'createTexture').andCallThrough()
       gl.texture 'test/test.jpg', tex
       expect(gl.gl.createTexture).not.toHaveBeenCalled()
+
+  describe '#textureCube()', ->
+    it 'should return a texture', ->
+      tex = gl.textureCube ['test/test.jpg', 'test/test.jpg', 'test/test.jpg', 'test/test.jpg', 'test/test.jpg', 'test/test.jpg']
+      expect(tex).toBeDefined()
+
+    it 'should callback after loading texture images', ->
+      tex = null
+      gl.textureCube ['test/test.jpg', 'test/test.jpg', 'test/test.jpg', 'test/test.jpg', 'test/test.jpg', 'test/test.jpg'], null, (t) ->
+        tex = t
+      waitsFor 1000, -> !!tex
 
   describe '#variable()', ->
     gl.program vshader, fshader

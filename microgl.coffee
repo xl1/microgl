@@ -113,18 +113,36 @@ class MicroGL
     @
 
 
-  texParameter: (tex, param={}) ->
-    tex2d = @gl.TEXTURE_2D
+  loadImages: (paths, callback, failCallback) ->
+    if typeof paths is 'string'
+      paths = [paths]
+    left = paths.length
+    error = 0
+    onload = -> --left or callback(imgs...)
+    onerror = -> error++ or failCallback?()
+    imgs = (for path in paths
+      img = document.createElement 'img'
+      img.onload = onload
+      img.onerror = onerror
+      img.src = path
+      img
+    )
+
+  texParameter: (tex, param={}, cube) ->
+    type = if cube then @gl.TEXTURE_CUBE_MAP else @gl.TEXTURE_2D
     filter = @gl[param.filter ? 'LINEAR']
     wrap = @gl[param.wrap ? 'CLAMP_TO_EDGE']
 
-    @gl.bindTexture(tex2d, tex)
-    @gl.texParameteri(tex2d, @gl.TEXTURE_MAG_FILTER, filter)
-    @gl.texParameteri(tex2d, @gl.TEXTURE_MIN_FILTER, filter)
-    @gl.texParameteri(tex2d, @gl.TEXTURE_WRAP_S, wrap)
-    @gl.texParameteri(tex2d, @gl.TEXTURE_WRAP_T, wrap)
-    @gl.bindTexture(tex2d, null)
+    @gl.bindTexture(type, tex)
+    @gl.texParameteri(type, @gl.TEXTURE_MAG_FILTER, filter)
+    @gl.texParameteri(type, @gl.TEXTURE_MIN_FILTER, filter)
+    @gl.texParameteri(type, @gl.TEXTURE_WRAP_S, wrap)
+    @gl.texParameteri(type, @gl.TEXTURE_WRAP_T, wrap)
+    @gl.bindTexture(type, null)
     @
+
+  texParameterCube: (tex, param) ->
+    @texParameter(tex, param, true)
 
   _setTexture: (img, tex, empty) ->
     @gl.bindTexture(@gl.TEXTURE_2D, tex)
@@ -137,35 +155,70 @@ class MicroGL
     @gl.bindTexture(@gl.TEXTURE_2D, null)
     @texParameter(tex)
 
+  _setTextureCube: (imgs, tex) ->
+    @gl.bindTexture(@gl.TEXTURE_CUBE_MAP, tex)
+    # POSITIVE_X 34069
+    # NEGATIVE_X 34070
+    # POSITIVE_Y 34071
+    # NEGATIVE_Y 34072
+    # POSITIVE_Z 34073
+    # NEGATIVE_Z 34074
+    for img, i in imgs
+      @gl.texImage2D(
+        @gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+        0, @gl.RGBA, @gl.RGBA, @gl.UNSIGNED_BYTE, img
+      )
+    @gl.bindTexture(@gl.TEXTURE_CUBE_MAP, null)
+    @texParameterCube(tex)
+
   texture: (source, tex, callback) ->
     return source if source instanceof WebGLTexture
-    tex ?= @gl.createTexture()
+    tex or= @gl.createTexture()
     if typeof source is 'string'
-      img = document.createElement('img')
-      img.onload = =>
+      @loadImages source, (img) =>
         @_setTexture(img, tex)
         if callback
           callback(tex)
         else if @_drawArg
           @gl.bindTexture(@gl.TEXTURE_2D, tex)
           @draw(@_drawArg...)
-      img.src = source
     else
       # <img>, <video>, <canvas>, ImageData object, etc.
       @_setTexture(source, tex)
     tex
 
+  textureCube: (source, tex, callback) ->
+    return source if source instanceof WebGLTexture
+    tex or= @gl.createTexture()
+    # source should be an array-like object
+    if typeof source[0] is 'string'
+      @loadImages source, (imgs...) =>
+        @_setTextureCube(imgs, tex)
+        if callback
+          callback(tex)
+        else if @_drawArg
+          @gl.bindTexture(@gl.TEXTURE_CUBE_MAP, tex)
+          @draw(@_drawArg...)
+    else
+      @_setTextureCube(source, tex)
+    tex
 
   variable: (param, cacheTexture) ->
     obj = {}
     for name in Object.keys param
       value = param[name]
       if uniform = @uniforms[name]
-        if ~TYPESUFFIX[uniform.type].indexOf('Sampler')
-          if cacheTexture
-            value = @cache[name] = @texture(value, @cache[name])
-          else
-            value = @texture(value)
+        switch TYPESUFFIX[uniform.type]
+          when 'Sampler2D'
+            if cacheTexture
+              value = @cache[name] = @texture(value, @cache[name])
+            else
+              value = @texture(value)
+          when 'SamplerCube'
+            if cacheTexture
+              value = @cache[name] = @textureCube(value, @cache[name])
+            else
+              value = @textureCube(value)
         obj[name] = value
       else if attribute = @attributes[name]
         buffer = @gl.createBuffer()
