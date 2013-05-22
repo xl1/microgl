@@ -7,6 +7,7 @@ uniform float u_scale;
 uniform vec3 u_rotate;
 uniform vec3 u_translate;
 uniform mat4 u_perspective;
+varying vec3 v_position;
 varying vec3 v_normal;
 
 void main(){
@@ -17,21 +18,27 @@ void main(){
     mat3(cosr.y, 0.0, sinr.y, 0.0, 1.0, 0.0, -sinr.y, 0.0, cosr.y) *
     mat3(1.0, 0.0, 0.0, 0.0, cosr.x, -sinr.x, 0.0, sinr.x, cosr.x);
 
-  gl_Position = u_perspective *
-    vec4(u_translate + u_scale * rotateMatrix * a_position, 1.0);
+  v_position = u_translate + u_scale * rotateMatrix * a_position;
+  gl_Position = u_perspective * vec4(v_position, 1.0);
   v_normal = rotateMatrix * a_normal;
 }
 </script>
 <script type="x-shader/x-fragment" id="fshader">
 precision mediump float;
 
-uniform vec3 u_light;
+uniform samplerCube u_texture;
+uniform bool u_background;
+varying vec3 v_position;
 varying vec3 v_normal;
-const vec3 color = vec3(1.0, 0.0, 0.0);
 
 void main(){
-  vec3 light = normalize(u_light);
-  gl_FragColor = vec4(dot(light, v_normal) * color, 1.0);
+  vec3 ref;
+  if(u_background){
+    ref = v_normal;
+  } else {
+    ref = reflect(v_position, v_normal);
+  }
+  gl_FragColor = textureCube(u_texture, ref);
 }
 </script>
 <script src="../microgl.js"></script>
@@ -46,17 +53,17 @@ function $text(id){
 // rendered objects
 
 function RenderedObject(){
-  this.positions = [];
-  this.normals = [];
+  this.variable = gl.variable({
+    a_position: [],
+    a_normal: [],
+    INDEX: null
+  });
   this.rotate = [0, 0, 0];
   this.translate = [0, 0, 0];
 }
 RenderedObject.prototype.scale = 1;
 RenderedObject.prototype.bindVars = function(param){
-  gl.bindVars({
-    a_position: this.positions,
-    a_normal: this.normals,
-    INDEX: null,
+  gl.bind(this.variable).bindVars({
     u_scale: this.scale,
     u_rotate: this.rotate,
     u_translate: this.translate
@@ -68,54 +75,32 @@ RenderedObject.prototype.render = function(){
   gl.draw();
 };
 
-/*
-function Plane(){
-  RenderedObject.apply(this, arguments);
-
-  this.positions = new Float32Array([
-    -1, -1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0
-  ]);
-  this.normals = new Float32Array([
-    0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1
-  ]);
-}
-Plane.prototype = new RenderedObject();
-*/
-
 function Cube(){
   RenderedObject.apply(this, arguments);
 
-  this.positions = new Float32Array([
+  positions = new Float32Array([
     -1, -1, -1, -1, -1, 1, -1, 1, -1, -1, 1, 1,
     1, -1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1
   ]);
-  this.normals = new Float32Array(this.positions);
-  this.indices = new Float32Array([
-    0, 1, 2, 1, 3, 2, 4, 6, 5, 5, 6, 7,
-    0, 4, 1, 1, 4, 5, 2, 3, 6, 3, 7, 6,
-    0, 2, 4, 2, 6, 4, 1, 5, 3, 3, 5, 7
-  ]);
+  this.variable = gl.variable({
+    a_position: positions,
+    a_normal: new Float32Array(positions),
+    INDEX: new Uint16Array([
+      0, 1, 2, 1, 3, 2, 4, 6, 5, 5, 6, 7,
+      0, 4, 1, 1, 4, 5, 2, 3, 6, 3, 7, 6,
+      0, 2, 4, 2, 6, 4, 1, 5, 3, 3, 5, 7
+    ])
+  });
 }
 Cube.prototype = new RenderedObject();
-Cube.prototype.bindVars = function(param){
-  gl.bindVars({
-    a_position: this.positions,
-    a_normal: this.normals,
-    INDEX: this.indices,
-    u_scale: this.scale,
-    u_rotate: this.rotate,
-    u_translate: this.translate
-  });
-  if(param) gl.bindVars(param);
-};
 
 function Torus(){
   RenderedObject.apply(this, arguments);
   var idx, s, p,
       cost, sint, coss = 1, sins = 0, cosp, sinp;
 
-  this.positions = new Float32Array(6 * 36 * 37);
-  this.normals = new Float32Array(6 * 36 * 37);
+  positions = new Float32Array(6 * 36 * 37);
+  normals = new Float32Array(6 * 36 * 37);
 
   for(var i = 0; i < 36; i++){
     cost = coss;
@@ -129,51 +114,73 @@ function Torus(){
       p = Math.PI * j / 18;
       cosp = Math.cos(p);
       sinp = Math.sin(p);
-      this.positions.set([
+      positions.set([
         cost * (2 + cosp), sint * (2 + cosp), sinp,
         coss * (2 + cosp), sins * (2 + cosp), sinp
       ], idx);
-      this.normals.set([
+      normals.set([
         cost * cosp, sint * cosp, sinp,
         coss * cosp, sins * cosp, sinp
       ], idx);
     }
   }
+  this.variable = gl.variable({
+    a_position: positions,
+    a_normal: normals,
+    INDEX: null
+  })
 }
 Torus.prototype = new RenderedObject();
 
 
-function main(){
+function main(tex){
   gl.init(document.body)
     .program($text('vshader'), $text('fshader'))
     .bindVars({
-      u_light: [-1, 1, -1],
       u_perspective: [
         2, 0, 0, 0,
         0, 2, 0, 0,
         0, 0, 1.01, 1,
         0, 0, -1.01, 0
-      ]
+      ],
+      u_texture: tex
     });
 
   torus = new Torus();
   torus.translate = [0, 0, 10];
   torus.render = function(t){
     this.rotate = [t, t * 0.7, 0];
-    this.constructor.prototype.render.apply(this);
+    this.bindVars({ u_background: false });
+    gl.draw();
   };
   objCollection.push(torus);
-  
+
+  cube = new Cube();
+  cube.scale = 50;
+  cube.render = function(t){
+    this.bindVars({ u_background: true });
+    gl.draw();
+  };
+  objCollection.push(cube);
+
   startT = Date.now();
   update();
 }
 
 function update(){
-  var t = (Date.now() - startT) * 0.003;
+  var t = (Date.now() - startT) * 0.001;
   gl.clear();
   objCollection.forEach(function(obj){ obj.render(t); });
   requestAnimationFrame(update);
 }
 
-document.addEventListener('DOMContentLoaded', main, false);
+gl.textureCube([
+  'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg'
+], null, main);
 </script>
+<body>
+<p>
+テクスチャは <a href="http://www.humus.name">Emil Persson (Humus) 氏</a>によるものです。
+<a href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a> にもとづいて使用を許諾されています
+</p>
+</body>
