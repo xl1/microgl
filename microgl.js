@@ -280,8 +280,8 @@
       return tex;
     };
 
-    MicroGL.prototype.variable = function(param, cacheTexture) {
-      var attribute, buffer, name, obj, uniform, value, _i, _len, _ref;
+    MicroGL.prototype.variable = function(param, useCache) {
+      var buffer, name, obj, uniform, value, _base, _i, _len, _ref;
       obj = {};
       _ref = Object.keys(param);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -290,36 +290,39 @@
         if (uniform = this.uniforms[name]) {
           switch (TYPESUFFIX[uniform.type]) {
             case 'Sampler2D':
-              if (cacheTexture) {
+              if (useCache) {
                 value = this.cache[name] = this.texture(value, this.cache[name]);
               } else {
                 value = this.texture(value);
               }
               break;
             case 'SamplerCube':
-              if (cacheTexture) {
+              if (useCache) {
                 value = this.cache[name] = this.textureCube(value, this.cache[name]);
               } else {
                 value = this.textureCube(value);
               }
           }
           obj[name] = value;
-        } else if (attribute = this.attributes[name]) {
-          buffer = this.gl.createBuffer();
-          this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
-          this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(value), this.gl.STATIC_DRAW);
-          buffer.length = value.length;
-          obj[name] = buffer;
-        } else if (name === 'INDEX') {
-          if (value) {
+        } else if (this.attributes[name] || (name === 'INDEX')) {
+          if (value == null) {
+            obj[name] = null;
+            continue;
+          }
+          if (useCache) {
+            buffer = (_base = this.cache)[name] || (_base[name] = this.gl.createBuffer());
+          } else {
             buffer = this.gl.createBuffer();
+          }
+          if (name === 'INDEX') {
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffer);
             this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(value), this.gl.STATIC_DRAW);
-            buffer.length = value.length;
-            obj[name] = buffer;
           } else {
-            obj[name] = null;
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(value), this.gl.STATIC_DRAW);
           }
+          buffer.length = value.length;
+          obj[name] = buffer;
         }
       }
       return obj;
