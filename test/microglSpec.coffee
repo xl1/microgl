@@ -219,6 +219,11 @@ describe 'MicroGL', ->
       expect(frame.color).toBeDefined()
     # depth buffer と stencil buffer も
 
+  describe '#frameCube()', ->
+    it 'should return a framebuffer', ->
+      frame = gl.frameCube()
+      expect(frame).toBeDefined()
+
   describe '#draw()', ->
     gl.init null
     gl.program vshader, fshader

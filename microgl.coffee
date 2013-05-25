@@ -155,7 +155,7 @@ class MicroGL
     @gl.bindTexture(@gl.TEXTURE_2D, null)
     @texParameter(tex)
 
-  _setTextureCube: (imgs, tex) ->
+  _setTextureCube: (imgs, tex, empty) ->
     @gl.bindTexture(@gl.TEXTURE_CUBE_MAP, tex)
     # POSITIVE_X 34069
     # NEGATIVE_X 34070
@@ -163,11 +163,18 @@ class MicroGL
     # NEGATIVE_Y 34072
     # POSITIVE_Z 34073
     # NEGATIVE_Z 34074
-    for img, i in imgs
-      @gl.texImage2D(
-        @gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
-        0, @gl.RGBA, @gl.RGBA, @gl.UNSIGNED_BYTE, img
-      )
+    if empty
+      for img, i in imgs
+        @gl.texImage2D(
+          @gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, @gl.RGBA,
+          img.width, img.height, 0, @gl.RGBA, @gl.UNSIGNED_BYTE, null
+        )
+    else
+      for img, i in imgs
+        @gl.texImage2D(
+          @gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+          0, @gl.RGBA, @gl.RGBA, @gl.UNSIGNED_BYTE, img
+        )
     @gl.bindTexture(@gl.TEXTURE_CUBE_MAP, null)
     @texParameterCube(tex)
 
@@ -292,27 +299,38 @@ class MicroGL
     @bind @variable(param, true)
 
 
-  frame: (width=@width, height=@height, option) ->
-    # option = color:true, depth:true, stencil:true
+  frame: (width=@width, height=@height, flags={}) ->
+    # flags =
+    #   color: true
+    #   depth: true
+    #   stencil: false
+    #   cube: false
     fb = @gl.createFramebuffer()
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, fb)
     tex = @gl.createTexture()
-    @_setTexture({ width, height }, tex, true)
+    if flags.cube
+      @_setTextureCube({ width, height }, tex, true)
+    else
+      @_setTexture({ width, height }, tex, true)
+      @gl.framebufferTexture2D(
+        @gl.FRAMEBUFFER, @gl.COLOR_ATTACHMENT0, @gl.TEXTURE_2D, tex, 0)
 
     rb = @gl.createRenderbuffer()
     @gl.bindRenderbuffer(@gl.RENDERBUFFER, rb)
-    @gl.renderbufferStorage(@gl.RENDERBUFFER, @gl.DEPTH_COMPONENT16, width, height)
-
-    @gl.framebufferTexture2D(@gl.FRAMEBUFFER, @gl.COLOR_ATTACHMENT0,
-      @gl.TEXTURE_2D, tex, 0)
-    @gl.framebufferRenderbuffer(@gl.FRAMEBUFFER, @gl.DEPTH_ATTACHMENT,
-      @gl.RENDERBUFFER, rb)
+    @gl.renderbufferStorage(
+      @gl.RENDERBUFFER, @gl.DEPTH_COMPONENT16, width, height)
+    @gl.framebufferRenderbuffer(
+      @gl.FRAMEBUFFER, @gl.DEPTH_ATTACHMENT, @gl.RENDERBUFFER, rb)
 
     @gl.bindRenderbuffer(@gl.RENDERBUFFER, null)
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, null)
 
     fb.color = tex
     fb
+
+  frameCube: (width, height, flags={}) ->
+    flags.cube = true
+    @frame(width, height, flags)
 
 
   draw: (type, num) ->
@@ -332,6 +350,13 @@ class MicroGL
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, null)
     @
 
+  drawFrameCube: (fb, idx, type, num) ->
+    @gl.bindFramebuffer(@gl.FRAMEBUFFER, fb)
+    @gl.framebufferTexture2D(@gl.FRAMEBUFFER, @gl.COLOR_ATTACHMENT0,
+      @gl.TEXTURE_CUBE_MAP_POSITIVE_X + idx, fb.color, 0)
+    @draw(type, num)
+    @gl.bindFramebuffer(@gl.FRAMEBUFFER, null)
+    @
 
   clear: ->
     @gl.clear(@gl.COLOR_BUFFER_BIT | @gl.DEPTH_BUFFER_BIT)
@@ -340,6 +365,14 @@ class MicroGL
   clearFrame: (fb) ->
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, fb)
     @clear()
+    @gl.bindFramebuffer(@gl.FRAMEBUFFER, null)
+    @
+
+  clearFrameCube: (fb, idx) ->
+    @gl.bindFramebuffer(@gl.FRAMEBUFFER, fb)
+    @gl.framebufferTexture2D(@gl.FRAMEBUFFER, @gl.COLOR_ATTACHMENT0,
+      @gl.TEXTURE_CUBE_MAP_POSITIVE_X + idx, fb.color, 0)
+    @clear(type, num)
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, null)
     @
 

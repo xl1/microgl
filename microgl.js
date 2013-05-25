@@ -223,12 +223,19 @@
       return this.texParameter(tex);
     };
 
-    MicroGL.prototype._setTextureCube = function(imgs, tex) {
-      var i, img, _i, _len;
+    MicroGL.prototype._setTextureCube = function(imgs, tex, empty) {
+      var i, img, _i, _j, _len, _len1;
       this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, tex);
-      for (i = _i = 0, _len = imgs.length; _i < _len; i = ++_i) {
-        img = imgs[i];
-        this.gl.texImage2D(this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
+      if (empty) {
+        for (i = _i = 0, _len = imgs.length; _i < _len; i = ++_i) {
+          img = imgs[i];
+          this.gl.texImage2D(this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.gl.RGBA, img.width, img.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+        }
+      } else {
+        for (i = _j = 0, _len1 = imgs.length; _j < _len1; i = ++_j) {
+          img = imgs[i];
+          this.gl.texImage2D(this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
+        }
       }
       this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, null);
       return this.texParameterCube(tex);
@@ -394,7 +401,7 @@
       return this.bind(this.variable(param, true));
     };
 
-    MicroGL.prototype.frame = function(width, height, option) {
+    MicroGL.prototype.frame = function(width, height, flags) {
       var fb, rb, tex;
       if (width == null) {
         width = this.width;
@@ -402,22 +409,40 @@
       if (height == null) {
         height = this.height;
       }
+      if (flags == null) {
+        flags = {};
+      }
       fb = this.gl.createFramebuffer();
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fb);
       tex = this.gl.createTexture();
-      this._setTexture({
-        width: width,
-        height: height
-      }, tex, true);
+      if (flags.cube) {
+        this._setTextureCube({
+          width: width,
+          height: height
+        }, tex, true);
+      } else {
+        this._setTexture({
+          width: width,
+          height: height
+        }, tex, true);
+        this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, tex, 0);
+      }
       rb = this.gl.createRenderbuffer();
       this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, rb);
       this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT16, width, height);
-      this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, tex, 0);
       this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, rb);
       this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, null);
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
       fb.color = tex;
       return fb;
+    };
+
+    MicroGL.prototype.frameCube = function(width, height, flags) {
+      if (flags == null) {
+        flags = {};
+      }
+      flags.cube = true;
+      return this.frame(width, height, flags);
     };
 
     MicroGL.prototype.draw = function(type, num) {
@@ -444,6 +469,14 @@
       return this;
     };
 
+    MicroGL.prototype.drawFrameCube = function(fb, idx, type, num) {
+      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fb);
+      this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + idx, fb.color, 0);
+      this.draw(type, num);
+      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+      return this;
+    };
+
     MicroGL.prototype.clear = function() {
       this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
       return this;
@@ -452,6 +485,14 @@
     MicroGL.prototype.clearFrame = function(fb) {
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fb);
       this.clear();
+      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+      return this;
+    };
+
+    MicroGL.prototype.clearFrameCube = function(fb, idx) {
+      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fb);
+      this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + idx, fb.color, 0);
+      this.clear(type, num);
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
       return this;
     };
