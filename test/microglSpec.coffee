@@ -152,6 +152,12 @@ describe 'MicroGL', ->
       gl.bindVars { u_sampler: 'test/test.jpg' }
       expect(gl.gl.createTexture).not.toHaveBeenCalled()
 
+    it 'should not re-create vertex buffer', ->
+      gl.bindVars { a_texCoord: [0,0,0,1,1,1] }
+      spyOn(gl.gl, 'createBuffer').andCallThrough()
+      gl.bindVars { a_texCoord: [0,1,1,0,1,1] }
+      expect(gl.gl.createBuffer).not.toHaveBeenCalled()
+
     fshader_uniformtest = '''
       precision mediump float;
       uniform float u_float;

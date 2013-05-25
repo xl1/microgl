@@ -203,38 +203,40 @@ class MicroGL
       @_setTextureCube(source, tex)
     tex
 
-  variable: (param, cacheTexture) ->
+  variable: (param, useCache) ->
     obj = {}
     for name in Object.keys param
       value = param[name]
       if uniform = @uniforms[name]
         switch TYPESUFFIX[uniform.type]
           when 'Sampler2D'
-            if cacheTexture
+            if useCache
               value = @cache[name] = @texture(value, @cache[name])
             else
               value = @texture(value)
           when 'SamplerCube'
-            if cacheTexture
+            if useCache
               value = @cache[name] = @textureCube(value, @cache[name])
             else
               value = @textureCube(value)
         obj[name] = value
-      else if attribute = @attributes[name]
-        buffer = @gl.createBuffer()
-        @gl.bindBuffer(@gl.ARRAY_BUFFER, buffer)
-        @gl.bufferData(@gl.ARRAY_BUFFER, new Float32Array(value), @gl.STATIC_DRAW)
-        buffer.length = value.length
-        obj[name] = buffer
-      else if name is 'INDEX'
-        if value
+      else if @attributes[name] or (name is 'INDEX')
+        if not value?
+          obj[name] = null
+          continue
+        if useCache
+          # useCache でかつ cache があるときは createBuffer しない
+          buffer = @cache[name] or= @gl.createBuffer()
+        else
           buffer = @gl.createBuffer()
+        if name is 'INDEX'
           @gl.bindBuffer(@gl.ELEMENT_ARRAY_BUFFER, buffer)
           @gl.bufferData(@gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(value), @gl.STATIC_DRAW)
-          buffer.length = value.length
-          obj[name] = buffer
         else
-          obj[name] = null
+          @gl.bindBuffer(@gl.ARRAY_BUFFER, buffer)
+          @gl.bufferData(@gl.ARRAY_BUFFER, new Float32Array(value), @gl.STATIC_DRAW)
+        buffer.length = value.length
+        obj[name] = buffer
     obj
 
 
