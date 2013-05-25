@@ -53,7 +53,7 @@ function main(){
 }
 
 function update(){
-  t = (Date.now() - startT) * 0.003;
+  var t = (Date.now() - startT) * 0.003;
   // update model-view matrix
   gl.bindVars({
     u_modelView: [

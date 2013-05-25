@@ -7,8 +7,8 @@ uniform float u_scale;
 uniform vec3 u_rotate;
 uniform vec3 u_translate;
 uniform mat4 u_perspective;
-varying vec3 v_position;
-varying vec3 v_normal;
+uniform bool u_background;
+varying vec3 v_reference;
 
 void main(){
   vec3 sinr = sin(u_rotate);
@@ -18,27 +18,25 @@ void main(){
     mat3(cosr.y, 0.0, sinr.y, 0.0, 1.0, 0.0, -sinr.y, 0.0, cosr.y) *
     mat3(1.0, 0.0, 0.0, 0.0, cosr.x, -sinr.x, 0.0, sinr.x, cosr.x);
 
-  v_position = u_translate + u_scale * rotateMatrix * a_position;
-  gl_Position = u_perspective * vec4(v_position, 1.0);
-  v_normal = rotateMatrix * a_normal;
+  vec3 position = u_translate + u_scale * rotateMatrix * a_position;
+  vec3 normal = rotateMatrix * a_normal;
+
+  if(u_background){
+    v_reference = normal;
+  } else {
+    v_reference = reflect(position, normal);
+  }
+  gl_Position = u_perspective * vec4(position, 1.0);
 }
 </script>
 <script type="x-shader/x-fragment" id="fshader">
 precision mediump float;
 
 uniform samplerCube u_texture;
-uniform bool u_background;
-varying vec3 v_position;
-varying vec3 v_normal;
+varying vec3 v_reference;
 
 void main(){
-  vec3 ref;
-  if(u_background){
-    ref = v_normal;
-  } else {
-    ref = reflect(v_position, v_normal);
-  }
-  gl_FragColor = textureCube(u_texture, ref);
+  gl_FragColor = textureCube(u_texture, v_reference);
 }
 </script>
 <script src="../microgl.js"></script>
@@ -68,7 +66,9 @@ RenderedObject.prototype.bindVars = function(param){
     u_rotate: this.rotate,
     u_translate: this.translate
   });
-  if(param) gl.bindVars(param);
+  if(param){
+    gl.bindVars(param);
+  }
 };
 RenderedObject.prototype.render = function(){
   this.bindVars();
@@ -78,7 +78,7 @@ RenderedObject.prototype.render = function(){
 function Cube(){
   RenderedObject.apply(this, arguments);
 
-  positions = new Float32Array([
+  var positions = new Float32Array([
     -1, -1, -1, -1, -1, 1, -1, 1, -1, -1, 1, 1,
     1, -1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1
   ]);
@@ -97,10 +97,9 @@ Cube.prototype = new RenderedObject();
 function Torus(){
   RenderedObject.apply(this, arguments);
   var idx, s, p,
-      cost, sint, coss = 1, sins = 0, cosp, sinp;
-
-  positions = new Float32Array(6 * 36 * 37);
-  normals = new Float32Array(6 * 36 * 37);
+      cost, sint, coss = 1, sins = 0, cosp, sinp,
+      positions = new Float32Array(6 * 36 * 37),
+      normals = new Float32Array(6 * 36 * 37);
 
   for(var i = 0; i < 36; i++){
     cost = coss;
@@ -128,12 +127,14 @@ function Torus(){
     a_position: positions,
     a_normal: normals,
     INDEX: null
-  })
+  });
 }
 Torus.prototype = new RenderedObject();
 
 
 function main(tex){
+  var torus = new Torus(), cube = new Cube();
+  
   gl.init(document.body)
     .program($text('vshader'), $text('fshader'))
     .bindVars({
@@ -146,7 +147,6 @@ function main(tex){
       u_texture: tex
     });
 
-  torus = new Torus();
   torus.translate = [0, 0, 10];
   torus.render = function(t){
     this.rotate = [t, t * 0.7, 0];
@@ -155,9 +155,8 @@ function main(tex){
   };
   objCollection.push(torus);
 
-  cube = new Cube();
   cube.scale = 50;
-  cube.render = function(t){
+  cube.render = function(){
     this.bindVars({ u_background: true });
     gl.draw();
   };

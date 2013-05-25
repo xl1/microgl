@@ -65,7 +65,7 @@ function makeTorus(){
 }
 
 function main(){
-  torus = makeTorus();
+  var torus = makeTorus();
   gl.init(document.body)
     .program($text('vshader'), $text('fshader'))
     .bindVars({
