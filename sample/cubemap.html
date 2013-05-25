@@ -6,37 +6,61 @@ attribute vec3 a_normal;
 uniform float u_scale;
 uniform vec3 u_rotate;
 uniform vec3 u_translate;
+uniform vec3 u_globalRotate;
 uniform mat4 u_perspective;
 uniform bool u_background;
-varying vec3 v_reference;
+uniform float u_N;
 
-void main(){
-  vec3 sinr = sin(u_rotate);
-  vec3 cosr = cos(u_rotate);
-  mat3 rotateMatrix =
+varying vec3 v_refF;
+varying vec3 v_refN;
+varying float v_F;
+
+mat3 rotation(vec3 rotate){
+  vec3 sinr = sin(rotate);
+  vec3 cosr = cos(rotate);
+  return (
     mat3(cosr.z, -sinr.z, 0.0, sinr.z, cosr.z, 0.0, 0.0, 0.0, 1.0) *
     mat3(cosr.y, 0.0, sinr.y, 0.0, 1.0, 0.0, -sinr.y, 0.0, cosr.y) *
-    mat3(1.0, 0.0, 0.0, 0.0, cosr.x, -sinr.x, 0.0, sinr.x, cosr.x);
+    mat3(1.0, 0.0, 0.0, 0.0, cosr.x, -sinr.x, 0.0, sinr.x, cosr.x)
+  );
+}
+
+void main(){
+  mat3 rotateMatrix = rotation(u_rotate);
+  mat3 globalMatrix = rotation(u_globalRotate);
 
   vec3 position = u_translate + u_scale * rotateMatrix * a_position;
   vec3 normal = rotateMatrix * a_normal;
 
+  float f, t;
   if(u_background){
-    v_reference = normal;
+    v_refF = normal;
+    v_refN = normal;
+    v_F = 0.0;
   } else {
-    v_reference = reflect(position, normal);
+    v_refF = reflect(position, normal);
+    v_refN = refract(position, normal, 1.0 / u_N);
+    f = (u_N - 1.0) / (u_N + 1.0);
+    t = dot(normalize(position), normal);
+    v_F = mix(pow(1.0 + t, 5.0), 1.0, f * f);
   }
-  gl_Position = u_perspective * vec4(position, 1.0);
+  gl_Position = u_perspective * vec4(globalMatrix * position, 1.0);
 }
 </script>
 <script type="x-shader/x-fragment" id="fshader">
 precision mediump float;
 
 uniform samplerCube u_texture;
-varying vec3 v_reference;
+varying vec3 v_refF;
+varying vec3 v_refN;
+varying float v_F;
 
 void main(){
-  gl_FragColor = textureCube(u_texture, v_reference);
+  gl_FragColor = mix(
+    textureCube(u_texture, v_refN),
+    textureCube(u_texture, v_refF),
+    v_F
+  );
 }
 </script>
 <script src="../microgl.js"></script>
@@ -133,8 +157,8 @@ Torus.prototype = new RenderedObject();
 
 
 function main(tex){
-  var torus = new Torus(), cube = new Cube();
-  
+  var torus, cube;
+
   gl.init(document.body)
     .program($text('vshader'), $text('fshader'))
     .bindVars({
@@ -144,23 +168,30 @@ function main(tex){
         0, 0, 1.01, 1,
         0, 0, -1.01, 0
       ],
-      u_texture: tex
+      u_texture: tex,
+      u_N: 1.54
     });
 
-  torus.translate = [0, 0, 10];
+  torus = new Torus();
   torus.render = function(t){
     this.rotate = [t, t * 0.7, 0];
+    this.translate = [-10 * Math.sin(t), 0, 10 * Math.cos(t)];
     this.bindVars({ u_background: false });
     gl.draw();
   };
   objCollection.push(torus);
 
+  cube = new Cube();
   cube.scale = 50;
   cube.render = function(){
     this.bindVars({ u_background: true });
     gl.draw();
   };
   objCollection.push(cube);
+
+  document.getElementById('refract').addEventListener('change', function(){
+    gl.bindVars({ u_N: +this.value });
+  }, false);
 
   startT = Date.now();
   update();
@@ -169,6 +200,7 @@ function main(tex){
 function update(){
   var t = (Date.now() - startT) * 0.001;
   gl.clear();
+  gl.bindVars({ u_globalRotate: [0, -t, 0] });
   objCollection.forEach(function(obj){ obj.render(t); });
   requestAnimationFrame(update);
 }
@@ -178,8 +210,12 @@ gl.textureCube([
 ], null, main);
 </script>
 <body>
-<p>
-テクスチャは <a href="http://www.humus.name">Emil Persson (Humus) 氏</a>によるものです。
-<a href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a> にもとづいて使用を許諾されています
-</p>
+<div>
+  テクスチャは <a href="http://www.humus.name">Emil Persson (Humus) 氏</a>によるものです。
+  <a href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a> にもとづいて使用を許諾されています
+</div>
+<div>
+  屈折率 (1.0 - 10.0)
+  <input id="refract" type="range" min="1" max="10" step="any" value="2">
+</div>
 </body>
