@@ -282,6 +282,40 @@ describe 'MicroGL', ->
       expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
       expect(gl.gl.drawArrays).toHaveBeenCalledWith(gl.gl.TRIANGLE_STRIP, 0, 3)
 
+  describe '#drawFrame()', ->
+    gl.init null
+    gl.program vshader, fshader
+    gl.bindVars {
+      a_position: [0,0,1,1, 0,1,1,1, 1,1,1,1]
+      a_texCoord: [0,0, 0,1, 1,1]
+      u_sampler: 'test/test.jpg'
+    }
+    frame = gl.frame()
+
+    it 'should call #gl.drawArrays()', ->
+      spyOn(gl.gl, 'drawArrays').andCallThrough()
+      gl.drawFrame(frame)
+      expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
+      expect(gl.gl.drawArrays).toHaveBeenCalledWith(gl.gl.TRIANGLE_STRIP, 0, 3)
+
+  describe '#drawFrameCube()', ->
+    gl.init null
+    gl.program vshader, fshader
+    gl.bindVars {
+      a_position: [0,0,1,1, 0,1,1,1, 1,1,1,1]
+      a_texCoord: [0,0, 0,1, 1,1]
+      u_sampler: 'test/test.jpg'
+    }
+    frame = gl.frameCube()
+
+    it 'should call #gl.drawArrays()', ->
+      spyOn(gl.gl, 'drawArrays').andCallThrough()
+      for i in [0...6]
+        gl.drawFrameCube(frame, i)
+        expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
+      expect(gl.gl.drawArrays.calls.length).toBe 6
+      expect(gl.gl.drawArrays).toHaveBeenCalledWith(gl.gl.TRIANGLE_STRIP, 0, 3)
+
   describe '#read()', ->
     imagedata = null
     gl.init(document.body, 8, 8)

@@ -164,10 +164,10 @@ class MicroGL
     # POSITIVE_Z 34073
     # NEGATIVE_Z 34074
     if empty
-      for img, i in imgs
+      for i in [0...6]
         @gl.texImage2D(
           @gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, @gl.RGBA,
-          img.width, img.height, 0, @gl.RGBA, @gl.UNSIGNED_BYTE, null
+          imgs.width, imgs.height, 0, @gl.RGBA, @gl.UNSIGNED_BYTE, null
         )
     else
       for img, i in imgs
@@ -328,9 +328,9 @@ class MicroGL
     fb.color = tex
     fb
 
-  frameCube: (width, height, flags={}) ->
+  frameCube: (size=@width, flags={}) ->
     flags.cube = true
-    @frame(width, height, flags)
+    @frame(size, size, flags)
 
 
   draw: (type, num) ->
@@ -372,7 +372,7 @@ class MicroGL
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, fb)
     @gl.framebufferTexture2D(@gl.FRAMEBUFFER, @gl.COLOR_ATTACHMENT0,
       @gl.TEXTURE_CUBE_MAP_POSITIVE_X + idx, fb.color, 0)
-    @clear(type, num)
+    @clear()
     @gl.bindFramebuffer(@gl.FRAMEBUFFER, null)
     @
 

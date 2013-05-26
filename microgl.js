@@ -224,15 +224,14 @@
     };
 
     MicroGL.prototype._setTextureCube = function(imgs, tex, empty) {
-      var i, img, _i, _j, _len, _len1;
+      var i, img, _i, _j, _len;
       this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, tex);
       if (empty) {
-        for (i = _i = 0, _len = imgs.length; _i < _len; i = ++_i) {
-          img = imgs[i];
-          this.gl.texImage2D(this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.gl.RGBA, img.width, img.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+        for (i = _i = 0; _i < 6; i = ++_i) {
+          this.gl.texImage2D(this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.gl.RGBA, imgs.width, imgs.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
         }
       } else {
-        for (i = _j = 0, _len1 = imgs.length; _j < _len1; i = ++_j) {
+        for (i = _j = 0, _len = imgs.length; _j < _len; i = ++_j) {
           img = imgs[i];
           this.gl.texImage2D(this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img);
         }
@@ -437,12 +436,15 @@
       return fb;
     };
 
-    MicroGL.prototype.frameCube = function(width, height, flags) {
+    MicroGL.prototype.frameCube = function(size, flags) {
+      if (size == null) {
+        size = this.width;
+      }
       if (flags == null) {
         flags = {};
       }
       flags.cube = true;
-      return this.frame(width, height, flags);
+      return this.frame(size, size, flags);
     };
 
     MicroGL.prototype.draw = function(type, num) {
@@ -492,7 +494,7 @@
     MicroGL.prototype.clearFrameCube = function(fb, idx) {
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fb);
       this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + idx, fb.color, 0);
-      this.clear(type, num);
+      this.clear();
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
       return this;
     };
