@@ -26,14 +26,6 @@ TYPESIZE[glproto.FLOAT]      = 1
 TYPESIZE[glproto.FLOAT_VEC2] = 2
 TYPESIZE[glproto.FLOAT_VEC3] = 3
 TYPESIZE[glproto.FLOAT_VEC4] = 4
-TYPESIZE[glproto.INT]        = 1
-TYPESIZE[glproto.INT_VEC2]   = 2
-TYPESIZE[glproto.INT_VEC3]   = 3
-TYPESIZE[glproto.INT_VEC4]   = 4
-TYPESIZE[glproto.BOOL]       = 1
-TYPESIZE[glproto.BOOL_VEC2]  = 2
-TYPESIZE[glproto.BOOL_VEC3]  = 3
-TYPESIZE[glproto.BOOL_VEC4]  = 4
 TYPESIZE[glproto.FLOAT_MAT2] = 4
 TYPESIZE[glproto.FLOAT_MAT3] = 9
 TYPESIZE[glproto.FLOAT_MAT4] = 16
@@ -90,7 +82,7 @@ class MicroGL
     @_useElementArray = false
 
     @gl.useProgram(program)
-    for i in [0...@gl.getProgramParameter(program, @gl.ACTIVE_UNIFORMS)]
+    for i in [0...@gl.getProgramParameter(program, @gl.ACTIVE_UNIFORMS)] by 1
       uniform = @gl.getActiveUniform(program, i)
       name = uniform.name
       @uniforms[name] = {
@@ -99,7 +91,7 @@ class MicroGL
         size: uniform.size # array length
         name
       }
-    for i in [0...@gl.getProgramParameter(program, @gl.ACTIVE_ATTRIBUTES)]
+    for i in [0...@gl.getProgramParameter(program, @gl.ACTIVE_ATTRIBUTES)] by 1
       attribute = @gl.getActiveAttrib(program, i)
       name = attribute.name
       loc = @gl.getAttribLocation(program, name)

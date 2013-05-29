@@ -51,22 +51,6 @@
 
   TYPESIZE[glproto.FLOAT_VEC4] = 4;
 
-  TYPESIZE[glproto.INT] = 1;
-
-  TYPESIZE[glproto.INT_VEC2] = 2;
-
-  TYPESIZE[glproto.INT_VEC3] = 3;
-
-  TYPESIZE[glproto.INT_VEC4] = 4;
-
-  TYPESIZE[glproto.BOOL] = 1;
-
-  TYPESIZE[glproto.BOOL_VEC2] = 2;
-
-  TYPESIZE[glproto.BOOL_VEC3] = 3;
-
-  TYPESIZE[glproto.BOOL_VEC4] = 4;
-
   TYPESIZE[glproto.FLOAT_MAT2] = 4;
 
   TYPESIZE[glproto.FLOAT_MAT3] = 9;
@@ -137,7 +121,7 @@
       this.attributes = {};
       this._useElementArray = false;
       this.gl.useProgram(program);
-      for (i = _i = 0, _ref = this.gl.getProgramParameter(program, this.gl.ACTIVE_UNIFORMS); 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      for (i = _i = 0, _ref = this.gl.getProgramParameter(program, this.gl.ACTIVE_UNIFORMS); _i < _ref; i = _i += 1) {
         uniform = this.gl.getActiveUniform(program, i);
         name = uniform.name;
         this.uniforms[name] = {
@@ -147,7 +131,7 @@
           name: name
         };
       }
-      for (i = _j = 0, _ref1 = this.gl.getProgramParameter(program, this.gl.ACTIVE_ATTRIBUTES); 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+      for (i = _j = 0, _ref1 = this.gl.getProgramParameter(program, this.gl.ACTIVE_ATTRIBUTES); _j < _ref1; i = _j += 1) {
         attribute = this.gl.getActiveAttrib(program, i);
         name = attribute.name;
         loc = this.gl.getAttribLocation(program, name);
