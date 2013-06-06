@@ -1,34 +1,34 @@
-glproto = WebGLRenderingContext.prototype
+RC = WebGLRenderingContext
 
 # uniform type suffix
 TYPESUFFIX = {}
-TYPESUFFIX[glproto.FLOAT]        = '1f'
-TYPESUFFIX[glproto.FLOAT_VEC2]   = '2fv'
-TYPESUFFIX[glproto.FLOAT_VEC3]   = '3fv'
-TYPESUFFIX[glproto.FLOAT_VEC4]   = '4fv'
-TYPESUFFIX[glproto.INT]          = '1i'
-TYPESUFFIX[glproto.INT_VEC2]     = '2iv'
-TYPESUFFIX[glproto.INT_VEC3]     = '3iv'
-TYPESUFFIX[glproto.INT_VEC4]     = '4iv'
-TYPESUFFIX[glproto.BOOL]         = '1i'
-TYPESUFFIX[glproto.BOOL_VEC2]    = '2iv'
-TYPESUFFIX[glproto.BOOL_VEC3]    = '3iv'
-TYPESUFFIX[glproto.BOOL_VEC4]    = '4iv'
-TYPESUFFIX[glproto.FLOAT_MAT2]   = 'Matrix2fv'
-TYPESUFFIX[glproto.FLOAT_MAT3]   = 'Matrix3fv'
-TYPESUFFIX[glproto.FLOAT_MAT4]   = 'Matrix4fv'
-TYPESUFFIX[glproto.SAMPLER_2D]   = 'Sampler2D'
-TYPESUFFIX[glproto.SAMPLER_CUBE] = 'SamplerCube'
+TYPESUFFIX[RC.FLOAT]        = '1f'
+TYPESUFFIX[RC.FLOAT_VEC2]   = '2fv'
+TYPESUFFIX[RC.FLOAT_VEC3]   = '3fv'
+TYPESUFFIX[RC.FLOAT_VEC4]   = '4fv'
+TYPESUFFIX[RC.INT]          = '1i'
+TYPESUFFIX[RC.INT_VEC2]     = '2iv'
+TYPESUFFIX[RC.INT_VEC3]     = '3iv'
+TYPESUFFIX[RC.INT_VEC4]     = '4iv'
+TYPESUFFIX[RC.BOOL]         = '1i'
+TYPESUFFIX[RC.BOOL_VEC2]    = '2iv'
+TYPESUFFIX[RC.BOOL_VEC3]    = '3iv'
+TYPESUFFIX[RC.BOOL_VEC4]    = '4iv'
+TYPESUFFIX[RC.FLOAT_MAT2]   = 'Matrix2fv'
+TYPESUFFIX[RC.FLOAT_MAT3]   = 'Matrix3fv'
+TYPESUFFIX[RC.FLOAT_MAT4]   = 'Matrix4fv'
+TYPESUFFIX[RC.SAMPLER_2D]   = 'Sampler2D'
+TYPESUFFIX[RC.SAMPLER_CUBE] = 'SamplerCube'
 
 # attribute type sizes
 TYPESIZE = {}
-TYPESIZE[glproto.FLOAT]      = 1
-TYPESIZE[glproto.FLOAT_VEC2] = 2
-TYPESIZE[glproto.FLOAT_VEC3] = 3
-TYPESIZE[glproto.FLOAT_VEC4] = 4
-TYPESIZE[glproto.FLOAT_MAT2] = 4
-TYPESIZE[glproto.FLOAT_MAT3] = 9
-TYPESIZE[glproto.FLOAT_MAT4] = 16
+TYPESIZE[RC.FLOAT]      = 1
+TYPESIZE[RC.FLOAT_VEC2] = 2
+TYPESIZE[RC.FLOAT_VEC3] = 3
+TYPESIZE[RC.FLOAT_VEC4] = 4
+TYPESIZE[RC.FLOAT_MAT2] = 4
+TYPESIZE[RC.FLOAT_MAT3] = 9
+TYPESIZE[RC.FLOAT_MAT4] = 16
 
 
 class MicroGL
@@ -54,18 +54,19 @@ class MicroGL
     @
 
 
-  makeProgram: (vsSource, fsSource) ->
-    initShader = (type, source) =>
-      shader = @gl.createShader(type)
-      @gl.shaderSource(shader, source)
-      @gl.compileShader(shader)
-      if not @gl.getShaderParameter(shader, @gl.COMPILE_STATUS)
-        console.log(@gl.getShaderInfoLog(shader))
-      @gl.attachShader(program, shader)
+  _initShader: (type, source) ->
+    shader = @gl.createShader(type)
+    @gl.shaderSource(shader, source)
+    @gl.compileShader(shader)
+    if not @gl.getShaderParameter(shader, @gl.COMPILE_STATUS)
+      console.log(@gl.getShaderInfoLog(shader))
+    else
+      shader
 
+  makeProgram: (vsSource, fsSource) ->
     program = @gl.createProgram()
-    initShader(@gl.VERTEX_SHADER, vsSource)
-    initShader(@gl.FRAGMENT_SHADER, fsSource)
+    @gl.attachShader(program, @_initShader(@gl.VERTEX_SHADER, vsSource))
+    @gl.attachShader(program, @_initShader(@gl.FRAGMENT_SHADER, fsSource))
 
     @gl.linkProgram(program)
     if not @gl.getProgramParameter(program, @gl.LINK_STATUS)
@@ -78,6 +79,8 @@ class MicroGL
     # param: (vsSource, fsSource) or (program)
     program = if fsSource then @makeProgram(vsSource, fsSource) else vsSource
     @uniforms = {}
+    for name in Object.keys @attributes
+      @gl.disableVertexAttribArray(@attributes[name].location)
     @attributes = {}
     @_useElementArray = false
 

@@ -55,6 +55,7 @@ describe 'MicroGL', ->
 
     it 'should return nothing if shader has errors', ->
       program = gl.makeProgram(vshader + 'HOGE', fshader)
+      gl.gl.getError()
       expect(program).toBeUndefined()
 
   describe '#program()', ->
@@ -62,6 +63,19 @@ describe 'MicroGL', ->
       gl.program(vshader, fshader)
     it 'should allow 1 argument: (program)', ->
       gl.program gl.makeProgram(vshader, fshader)
+
+    vshader_withoutTexcoord = '''
+      attribute vec4 a_position;
+      varying vec2 v_texCoord;
+      void main(){ v_texCoord = a_position.xy; gl_Position = a_position; }
+    '''
+    it 'should reset vertex-attrib-array availability', ->
+      gl.program(vshader, fshader)
+      isEnabled = gl.gl.getVertexAttrib(1, gl.gl.VERTEX_ATTRIB_ARRAY_ENABLED)
+      expect(isEnabled).toBe true
+      gl.program(vshader_withoutTexcoord, fshader)
+      isEnabled = gl.gl.getVertexAttrib(1, gl.gl.VERTEX_ATTRIB_ARRAY_ENABLED)
+      expect(isEnabled).toBe false
 
     # #attributes and #uniforms do not need to be public.
     xit 'should register attributes and uniforms', ->
