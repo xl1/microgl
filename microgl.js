@@ -152,6 +152,81 @@
       return this;
     };
 
+    MicroGL.prototype.blend = function(sourceFactor, destFactor) {
+      var dFactor, sFactor;
+      sFactor = ('' + sourceFactor).toUpperCase();
+      dFactor = ('' + destFactor).toUpperCase();
+      if (destFactor) {
+        this.gl.enable(this.gl.BLEND);
+        this.gl.blendFunc(this.gl[sFactor], this.gl[dFactor]);
+      } else {
+        switch (sFactor) {
+          case 'FALSE':
+            this.gl.disable(this.gl.BLEND);
+            break;
+          case 'TRUE':
+            this.gl.enable(this.gl.BLEND);
+            break;
+          case 'CLEAR':
+            this.blend('ZERO', 'ZERO');
+            break;
+          case 'COPY':
+            this.blend('ONE', 'ZERO');
+            break;
+          case 'DESTINATION':
+            this.blend('ZERO', 'ONE');
+            break;
+          case 'SOURCE-OVER':
+            this.blend('ONE', 'ONE_MINUS_SRC_ALPHA');
+            break;
+          case 'DESTINATION-OVER':
+            this.blend('ONE_MINUS_DST_ALPHA', 'ONE');
+            break;
+          case 'SOURCE-IN':
+            this.blend('DST_ALPHA', 'ZERO');
+            break;
+          case 'DESTINATION-IN':
+            this.blend('ZERO', 'SRC_ALPHA');
+            break;
+          case 'SOURCE-OUT':
+            this.blend('ONE_MINUS_DST_ALPHA', 'ZERO');
+            break;
+          case 'DESTINATION-OUT':
+            this.blend('ZERO', 'ONE_MINUS_SRC_ALPHA');
+            break;
+          case 'SOURCE-ATOP':
+            this.blend('DST_ALPHA', 'ONE_MINUS_SRC_ALPHA');
+            break;
+          case 'DESTINATION-ATOP':
+            this.blend('ONE_MINUS_DST_ALPHA', 'SRC_ALPHA');
+            break;
+          case 'XOR':
+            this.blend('ONE_MINUS_DST_ALPHA', 'ONE_MINUS_SRC_ALPHA');
+            break;
+          case 'LIGHTER':
+            this.blend('ONE', 'ONE');
+            break;
+          case 'MULTIPLY':
+            this.blend('ZERO', 'SRC_COLOR');
+            break;
+          case 'SCREEN':
+            this.blend('ONE_MINUS_DST_COLOR', 'ONE');
+            break;
+          case 'EXCLUSION':
+            this.blend('ONE_MINUS_DST_COLOR', 'ONE_MINUS_SRC_COLOR');
+            break;
+          case 'ADD':
+            this.blend('SRC_ALPHA', 'ONE');
+            break;
+          case 'DEFAULT':
+            this.blend('SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA');
+            break;
+          default:
+            console.warn('unsupported blend mode: ' + sourceFactor);
+        }
+      }
+    };
+
     MicroGL.prototype.loadImages = function(paths, callback, failCallback) {
       var error, img, imgs, left, onerror, onload, path;
       if (typeof paths === 'string') {

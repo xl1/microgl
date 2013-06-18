@@ -59,9 +59,9 @@ describe 'MicroGL', ->
       expect(program).toBeUndefined()
 
   describe '#program()', ->
-    it 'should allow 2 arguments: (vshader, fshader)', ->
+    it 'should accept 2 arguments: (vshader, fshader)', ->
       gl.program(vshader, fshader)
-    it 'should allow 1 argument: (program)', ->
+    it 'should accept 1 argument: (program)', ->
       gl.program gl.makeProgram(vshader, fshader)
 
     vshader_withoutTexcoord = '''
@@ -84,6 +84,54 @@ describe 'MicroGL', ->
       expect(attrs).toContain 'a_texCoord'
       unifs = Object.keys gl.uniforms
       expect(unifs).toContain 'u_sampler'
+
+  describe '#blend()', ->
+    it 'should change blend functions', ->
+      expect(gl.gl.getParameter(gl.gl.BLEND)).toBe false
+      gl.blend('SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA')
+      expect(gl.gl.getParameter(gl.gl.BLEND)).toBe true
+      expect(gl.gl.getParameter(gl.gl.BLEND_SRC_RGB)).toBe gl.gl.SRC_ALPHA
+      expect(gl.gl.getParameter(gl.gl.BLEND_DST_ALPHA))
+        .toBe gl.gl.ONE_MINUS_SRC_ALPHA
+
+    it 'should disable blending if 1st argument is false', ->
+      gl.gl.enable(gl.gl.BLEND)
+      gl.blend(false)
+      expect(gl.gl.getParameter(gl.gl.BLEND)).toBe false
+
+    it 'should re-enable blending if 1st argument is true', ->
+      gl.gl.disable(gl.gl.BLEND)
+      gl.blend(true)
+      expect(gl.gl.getParameter(gl.gl.BLEND)).toBe true
+
+    it 'should accept special named functions', ->
+      functions = {
+        clear: [0, 0]
+        copy: [1, 0]
+        destination: [0, 1]
+        'source-over':      [1, gl.gl.ONE_MINUS_SRC_ALPHA]
+        'destination-over': [gl.gl.ONE_MINUS_DST_ALPHA, 1]
+        'source-in':        [gl.gl.DST_ALPHA, 0]
+        'destination-in':   [0, gl.gl.SRC_ALPHA]
+        'source-out':       [gl.gl.ONE_MINUS_DST_ALPHA, 0]
+        'destination-out':  [0, gl.gl.ONE_MINUS_SRC_ALPHA]
+        'source-atop':      [gl.gl.DST_ALPHA, gl.gl.ONE_MINUS_SRC_ALPHA]
+        'destination-atop': [gl.gl.ONE_MINUS_DST_ALPHA, gl.gl.SRC_ALPHA]
+        xor: [gl.gl.ONE_MINUS_DST_ALPHA, gl.gl.ONE_MINUS_SRC_ALPHA]
+        lighter: [1, 1]
+
+        multiply: [0, gl.gl.SRC_COLOR]
+        screen: [gl.gl.ONE_MINUS_DST_COLOR, 1]
+        exclusion: [gl.gl.ONE_MINUS_DST_COLOR, gl.gl.ONE_MINUS_SRC_COLOR]
+
+        add: [gl.gl.SRC_ALPHA, 1]
+        default: [gl.gl.SRC_ALPHA, gl.gl.ONE_MINUS_SRC_ALPHA] 
+      }
+      for func, [sfactor, dfactor] of functions
+        gl.blend(func)
+        expect(gl.gl.getParameter(gl.gl.BLEND_SRC_RGB)).toBe sfactor
+        expect(gl.gl.getParameter(gl.gl.BLEND_DST_ALPHA)).toBe dfactor
+      return
 
   describe '#loadImages()', ->
     it 'should callback after loading images', ->
@@ -253,7 +301,7 @@ describe 'MicroGL', ->
       expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
       expect(gl.gl.drawArrays).toHaveBeenCalledWith(gl.gl.TRIANGLE_STRIP, 0, 3)
 
-    it 'should allow to change drawing mode', ->
+    it 'should change drawing mode when argument given', ->
       gl.bindVars {
         a_position: [0,0,1,1, 0,1,1,1, 1,1,1,1]
         a_texCoord: [0,0, 0,1, 1,1]
