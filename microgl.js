@@ -225,6 +225,7 @@
             console.warn('unsupported blend mode: ' + sourceFactor);
         }
       }
+      return this;
     };
 
     MicroGL.prototype.loadImages = function(paths, callback, failCallback) {

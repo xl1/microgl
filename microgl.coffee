@@ -141,7 +141,7 @@ class MicroGL
       when 'ADD'      then @blend('SRC_ALPHA', 'ONE')
       when 'DEFAULT'  then @blend('SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA')
       else console.warn 'unsupported blend mode: ' + sourceFactor
-    return
+    @
 
 
   loadImages: (paths, callback, failCallback) ->
