@@ -108,6 +108,42 @@ class MicroGL
     @
 
 
+  blend: (sourceFactor, destFactor) ->
+    sFactor = ('' + sourceFactor).toUpperCase()
+    dFactor = ('' + destFactor).toUpperCase()
+    if destFactor
+      @gl.enable(@gl.BLEND)
+      @gl.blendFunc(@gl[sFactor], @gl[dFactor])
+    else switch sFactor
+      when 'FALSE'  then @gl.disable(@gl.BLEND)
+      when 'TRUE'   then @gl.enable(@gl.BLEND)
+      # compositing
+      when 'CLEAR'            then @blend('ZERO', 'ZERO')
+      when 'COPY'             then @blend('ONE', 'ZERO')
+      when 'DESTINATION'      then @blend('ZERO', 'ONE')
+      when 'SOURCE-OVER'      then @blend('ONE', 'ONE_MINUS_SRC_ALPHA')
+      when 'DESTINATION-OVER' then @blend('ONE_MINUS_DST_ALPHA', 'ONE')
+      when 'SOURCE-IN'        then @blend('DST_ALPHA', 'ZERO')
+      when 'DESTINATION-IN'   then @blend('ZERO', 'SRC_ALPHA')
+      when 'SOURCE-OUT'       then @blend('ONE_MINUS_DST_ALPHA', 'ZERO')
+      when 'DESTINATION-OUT'  then @blend('ZERO', 'ONE_MINUS_SRC_ALPHA')
+      when 'SOURCE-ATOP'      then @blend('DST_ALPHA', 'ONE_MINUS_SRC_ALPHA')
+      when 'DESTINATION-ATOP' then @blend('ONE_MINUS_DST_ALPHA', 'SRC_ALPHA')
+      when 'XOR'
+        @blend('ONE_MINUS_DST_ALPHA', 'ONE_MINUS_SRC_ALPHA')
+      when 'LIGHTER'  then @blend('ONE', 'ONE')
+      # blend
+      when 'MULTIPLY' then @blend('ZERO', 'SRC_COLOR')
+      when 'SCREEN'   then @blend('ONE_MINUS_DST_COLOR', 'ONE')
+      when 'EXCLUSION'
+        @blend('ONE_MINUS_DST_COLOR', 'ONE_MINUS_SRC_COLOR')
+      # other
+      when 'ADD'      then @blend('SRC_ALPHA', 'ONE')
+      when 'DEFAULT'  then @blend('SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA')
+      else console.warn 'unsupported blend mode: ' + sourceFactor
+    @
+
+
   loadImages: (paths, callback, failCallback) ->
     if typeof paths is 'string'
       paths = [paths]
