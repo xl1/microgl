@@ -8,7 +8,7 @@ uniform vec3 u_rotate;
 uniform vec3 u_translate;
 uniform vec3 u_globalRotate;
 uniform mat4 u_perspective;
-uniform int u_type;
+uniform lowp int u_type;
 uniform float u_N;
 
 varying vec3 v_refF;
@@ -58,7 +58,7 @@ void main(){
 precision mediump float;
 
 uniform samplerCube u_texture;
-uniform int u_type;
+uniform lowp int u_type;
 varying vec3 v_refF;
 varying vec3 v_refN;
 varying float v_F;
