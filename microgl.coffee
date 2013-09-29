@@ -417,7 +417,4 @@ class MicroGL
     array
 
 
-if window
-  window.MicroGL = MicroGL
-  r = 'equestAnimationFrame'
-  window['r'+ r] or= window['webkitR'+ r] or window['mozR'+ r] or (f) -> setTimeout(f, 1000/60)
+window?.MicroGL = MicroGL
