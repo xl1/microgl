@@ -104,7 +104,7 @@
     MicroGL.prototype.makeProgram = function(vsSource, fsSource, uniformTypes, attributeTypes) {
       var dslarg, program;
       program = this.gl.createProgram();
-      if (ShaderDSL && (typeof vsSource === 'function')) {
+      if ((typeof ShaderDSL !== "undefined" && ShaderDSL !== null) && (typeof vsSource === 'function')) {
         dslarg = {
           vertexShader: vsSource,
           fragmentShader: fsSource,

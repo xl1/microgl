@@ -66,7 +66,7 @@ class MicroGL
   makeProgram: (vsSource, fsSource, uniformTypes, attributeTypes) ->
     program = @gl.createProgram()
 
-    if ShaderDSL and (typeof vsSource is 'function')
+    if ShaderDSL? and (typeof vsSource is 'function')
       dslarg = {
         vertexShader: vsSource
         fragmentShader: fsSource
