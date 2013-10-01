@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script type="x-shader/x-vertex" id="vshader">
+attribute vec2 a_position;
+uniform mat4 u_perspective;
+uniform mat4 u_modelView;
+varying vec2 v_texCoord;
+
+void main(){
+  v_texCoord = a_position;
+  gl_Position = u_perspective * u_modelView * vec4(a_position, 0.0, 1.0);
+}
+</script>
+<script type="x-shader/x-fragment" id="fshader">
+precision mediump float;
+
+uniform sampler2D u_sampler;
+varying vec2 v_texCoord;
+
+void main(){
+  gl_FragColor = texture2D(u_sampler, v_texCoord);
+}
+</script>
+<script src="../shaderdsl/ShaderDSL.js"></script>
+<script src="../microgl.js"></script>
+<script>
+var gl = new MicroGL(), startT = 0;
+
+function $text(id){
+  return document.getElementById(id).textContent;
+}
+
+function vshader(attrs, unifs){
+  var pos = vec4.createFrom(attrs.a_position[0], attrs.a_position[1], 0, 1);
+  var mat = unifs.u_modelView;
+  mat4.multiply(unifs.u_perspective, mat, mat);
+  var result = mat4.multiply(mat, pos, gl_Position);
+  return { v_texCoord: attrs.a_position };
+}
+function fshader(unifs, varys){
+  gl_FragColor = texture2D.create(unifs.u_sampler, varys.v_texCoord);
+}
+
+function main(){
+  // append <canvas> element to <body>
+  gl.init(document.body, 256, 256);
+  // compile shaders and link the program
+  gl.program(vshader, fshader, {
+    u_sampler: 'sampler2D',
+    u_perspective: 'mat4',
+    u_modelView: 'mat4'
+  }, {
+    a_position: 'vec2'
+  });
+  // bind variables
+  gl.bindVars({
+    a_position: [0,0, 0,1, 1,0, 1,1],
+    // images will be loaded asynchronously
+    // use `gl.texture(img, tex, callback)` to listen img.onload
+    u_sampler: 'test.jpg',
+    // matrices are transposed in shaders
+    u_perspective: [
+      2, 0, 0, 0,
+      0, 2, 0, 0,
+      0, 0, 1005/995, 1,
+      0, 0, -1000/995, 0
+    ]
+  });
+  startT = Date.now();
+  update();
+}
+
+function update(){
+  var t = (Date.now() - startT) * 0.003;
+  // update model-view matrix
+  gl.bindVars({
+    u_modelView: [
+      Math.cos(t), 0, -Math.sin(t), 0,
+      0,           1,            0, 0,
+      Math.sin(t), 0,  Math.cos(t), 0,
+      0, -0.5, 3, 1
+    ]
+  });
+  // then draw!
+  gl.clear().draw();
+  
+  requestAnimationFrame(update);
+}
+
+document.addEventListener('DOMContentLoaded', main, false);
+</script>
