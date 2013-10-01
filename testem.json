@@ -5,6 +5,7 @@
     "test/microglSpec.coffee"
   ],
   "serve_files": [
+    "shaderdsl/ShaderDSL.js",
     "microgl.js",
     "test/microglSpec.js"
   ]

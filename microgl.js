@@ -101,9 +101,19 @@
       }
     };
 
-    MicroGL.prototype.makeProgram = function(vsSource, fsSource) {
-      var program;
+    MicroGL.prototype.makeProgram = function(vsSource, fsSource, uniformTypes, attributeTypes) {
+      var dslarg, program;
       program = this.gl.createProgram();
+      if (ShaderDSL && (typeof vsSource === 'function')) {
+        dslarg = {
+          vertexShader: vsSource,
+          fragmentShader: fsSource,
+          uniforms: uniformTypes,
+          attributes: attributeTypes
+        };
+        vsSource = ShaderDSL.compileVertexShader(dslarg);
+        fsSource = ShaderDSL.compileFragmentShader(dslarg);
+      }
       this.gl.attachShader(program, this._initShader(this.gl.VERTEX_SHADER, vsSource));
       this.gl.attachShader(program, this._initShader(this.gl.FRAGMENT_SHADER, fsSource));
       this.gl.linkProgram(program);
@@ -114,9 +124,10 @@
       }
     };
 
-    MicroGL.prototype.program = function(vsSource, fsSource) {
-      var attribute, i, loc, name, program, uniform, _i, _j, _k, _len, _ref, _ref1, _ref2;
-      program = fsSource ? this.makeProgram(vsSource, fsSource) : vsSource;
+    MicroGL.prototype.program = function() {
+      var args, attribute, i, loc, name, program, uniform, _i, _j, _k, _len, _ref, _ref1, _ref2;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      program = args[1] ? this.makeProgram.apply(this, args) : args[0];
       this.uniforms = {};
       _ref = Object.keys(this.attributes);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
