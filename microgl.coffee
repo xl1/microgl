@@ -63,11 +63,21 @@ class MicroGL
     else
       shader
 
-  makeProgram: (vsSource, fsSource) ->
+  makeProgram: (vsSource, fsSource, uniformTypes, attributeTypes) ->
     program = @gl.createProgram()
+
+    if ShaderDSL? and (typeof vsSource is 'function')
+      dslarg = {
+        vertexShader: vsSource
+        fragmentShader: fsSource
+        uniforms: uniformTypes
+        attributes: attributeTypes
+      }
+      vsSource = ShaderDSL.compileVertexShader(dslarg)
+      fsSource = ShaderDSL.compileFragmentShader(dslarg)
+
     @gl.attachShader(program, @_initShader(@gl.VERTEX_SHADER, vsSource))
     @gl.attachShader(program, @_initShader(@gl.FRAGMENT_SHADER, fsSource))
-
     @gl.linkProgram(program)
     if not @gl.getProgramParameter(program, @gl.LINK_STATUS)
       console.log(@gl.getProgramInfoLog(program))
@@ -75,9 +85,12 @@ class MicroGL
       program
 
 
-  program: (vsSource, fsSource) ->
-    # param: (vsSource, fsSource) or (program)
-    program = if fsSource then @makeProgram(vsSource, fsSource) else vsSource
+  program: (args...) ->
+    # param:
+    #   {WebGLProgram} program
+    #   {string, string} sources of the shaders
+    #   {function, function, dict of string, dict of string} ShaderDSL arguments
+    program = if args[1] then @makeProgram(args...) else args[0]
     @uniforms = {}
     for name in Object.keys @attributes
       @gl.disableVertexAttribArray(@attributes[name].location)
@@ -417,7 +430,4 @@ class MicroGL
     array
 
 
-if window
-  window.MicroGL = MicroGL
-  r = 'equestAnimationFrame'
-  window['r'+ r] or= window['webkitR'+ r] or window['mozR'+ r] or (f) -> setTimeout(f, 1000/60)
+window?.MicroGL = MicroGL
