@@ -1,0 +1,19 @@
+{
+  "name": "microgl",
+  "version": "1.0.0",
+  "description": "small webgl wrapper",
+  "main": "microgl.js",
+  "scripts": {
+    "test": "testem"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xl1/microgl.git"
+  },
+  "author": "xl1",
+  "license": "MIT",
+  "devDependencies": {
+    "coffeescript": "^2.4.1",
+    "testem": "^2.17.0"
+  }
+}
