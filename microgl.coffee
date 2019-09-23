@@ -65,9 +65,13 @@ class MicroGL
 
   makeProgram: (vsSource, fsSource) ->
     program = @gl.createProgram()
-    @gl.attachShader(program, @_initShader(@gl.VERTEX_SHADER, vsSource))
-    @gl.attachShader(program, @_initShader(@gl.FRAGMENT_SHADER, fsSource))
+    vShader = @_initShader(@gl.VERTEX_SHADER, vsSource);
+    return unless vShader
+    fShader = @_initShader(@gl.FRAGMENT_SHADER, fsSource);
+    return unless fShader
 
+    @gl.attachShader(program, vShader)
+    @gl.attachShader(program, fShader)
     @gl.linkProgram(program)
     if not @gl.getProgramParameter(program, @gl.LINK_STATUS)
       console.log(@gl.getProgramInfoLog(program))
