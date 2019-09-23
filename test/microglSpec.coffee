@@ -58,24 +58,6 @@ describe 'MicroGL', ->
       gl.gl.getError()
       expect(program).toBeUndefined()
 
-    it 'should compile ShaderDSL if functions are given', ->
-      gl_Position = gl_FragColor = null
-      vs = (attributes, uniforms) ->
-        gl_Position = attributes.a_position
-        return { v_texCoord: attributes.a_texCoord }
-      fs = (uniforms, varyings) ->
-        gl_FragColor = texture2D.create(uniforms.u_sampler, varyings.v_texCoord)
-        return
-      uniformTypes =
-        u_sampler: 'sampler2D'
-      attributeTypes =
-        a_position: 'vec4'
-        a_texCoord: 'vec2'
-
-      program = gl.makeProgram(vs, fs, uniformTypes, attributeTypes)
-      expect(gl.gl.getError()).toBe gl.gl.NO_ERROR
-      expect(program).toBeDefined()
-
   describe '#program()', ->
     it 'should accept 2 arguments: (vshader, fshader)', ->
       gl.program(vshader, fshader)

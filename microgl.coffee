@@ -63,21 +63,11 @@ class MicroGL
     else
       shader
 
-  makeProgram: (vsSource, fsSource, uniformTypes, attributeTypes) ->
+  makeProgram: (vsSource, fsSource) ->
     program = @gl.createProgram()
-
-    if ShaderDSL? and (typeof vsSource is 'function')
-      dslarg = {
-        vertexShader: vsSource
-        fragmentShader: fsSource
-        uniforms: uniformTypes
-        attributes: attributeTypes
-      }
-      vsSource = ShaderDSL.compileVertexShader(dslarg)
-      fsSource = ShaderDSL.compileFragmentShader(dslarg)
-
     @gl.attachShader(program, @_initShader(@gl.VERTEX_SHADER, vsSource))
     @gl.attachShader(program, @_initShader(@gl.FRAGMENT_SHADER, fsSource))
+
     @gl.linkProgram(program)
     if not @gl.getProgramParameter(program, @gl.LINK_STATUS)
       console.log(@gl.getProgramInfoLog(program))
@@ -85,12 +75,9 @@ class MicroGL
       program
 
 
-  program: (args...) ->
-    # param:
-    #   {WebGLProgram} program
-    #   {string, string} sources of the shaders
-    #   {function, function, dict of string, dict of string} ShaderDSL arguments
-    program = if args[1] then @makeProgram(args...) else args[0]
+  program: (vsSource, fsSource) ->
+    # param: (vsSource, fsSource) or (program)
+    program = if fsSource then @makeProgram(vsSource, fsSource) else vsSource
     @uniforms = {}
     for name in Object.keys @attributes
       @gl.disableVertexAttribArray(@attributes[name].location)
